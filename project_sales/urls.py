@@ -1,0 +1,40 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+	path('sales_inits/enums/',
+		views.SalesInitEnums.as_view(),
+		name='sales_init_enums'),
+	path('sales_inits/',
+		views.SalesInitListView.as_view(),
+		name='sales_init_list'),
+	path('sales_inits/<pk>/',
+		views.SalesInitDetailView.as_view(),
+		name='sales_init_detail'),
+	path('sales_inits/copy/<pk>/',
+		views.SalesInitCopyView.as_view(),
+		name='sales_init_detail'),
+
+	path('opex_variants/',
+		views.OpexVariantListCreateView.as_view(),
+		name='opex_variant_list'),
+	path('opex_variants/<pk>/',
+		views.OpexVariantDetailView.as_view(),
+		name='opex_variant_detail'),
+	path('opex_variants/copy/<pk>/',
+		views.OpexVariantCopyView.as_view(),
+		name='opex_variant_detail'),
+
+	path('opexs/enums/',
+		views.OpexsEnums.as_view(),
+		name='sales_init_enums'),
+	path('opexs/',
+		views.OpexListCreateView.as_view(),
+		name='opex_list'),
+	path('opexs/copy/<pk>/',
+		views.OpexCopyView.as_view(),
+		name='opex_copy'),
+	path('opexs/<pk>/',
+		views.OpexDetailView.as_view(),
+		name='opex_detail'),
+]
