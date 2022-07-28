@@ -2,11 +2,13 @@ import json
 import math
 import datetime
 import time
+from calendar import monthrange
 from scipy import optimize
 from dateutil.relativedelta import relativedelta
 from project_calculations.models import ProfitAndLossPlan as model
 from .intermediate_functions import xirr, vat_rate, compare_dates
 from .intermediate_functions import daterange, indexing_period
+
 
 
 class ProfitAndLossPlan:
@@ -162,59 +164,66 @@ class ProfitAndLossPlan:
 
 	def leasing_initial_payment(self, leasing):
 		'''получить первоначальный лизинговый платеж'''
-		payment = -self.capex.amount_capital_expenditure
+		payment = self.capex.amount_capital_expenditure
 		if leasing.initial_payment > 0:
 			payment = payment*leasing.initial_payment/100
 
 		return payment
 
 
-	def leasings_costs(self, minus=False)->list:
+	def leasings_costs_for_leasing(self, leasing, minus=False)->list:
 		'''получить лизинговые расходы
 		считает за весь период и возвращает список'''
 		leasing_costs_list = [] #список лизинговых расходов за весь период продаж
 		leasing_remainder = self.capex.amount_capital_expenditure
+		leasing_index = 0 #индекс для работы с списками платежей и дат лизинга
 		for index, month in enumerate(self.daterange): #перебираем все месяца продаж
 			leasing_interests = 0 #формируем первоначальный лизинговый расход
 			if self.capex.leasing_switch and self.project.fin_source_leasing: #если объект будет в лизинге
-				for leasing in self.leasings.all(): #перебираем лизинги
-					start_date=leasing.contract_start_date.date() #дата контракта
-					end_date = leasing.contract_start_date.date()+relativedelta(months=+leasing.term_leasing_contract+1) #дата конца контракта
+				start_date=leasing.contract_start_date.date() #дата контракта
+				end_date = leasing.contract_start_date.date()+relativedelta(months=+leasing.term_leasing_contract) #дата конца контракта
+				if month >= start_date and month <= end_date: #если дата больше даты начала контракта лизинга и меньше даты окончания контракта
+					leasing_month_list = daterange(start_date, end_date, datetime=False) #список дат периода контракт
 					if leasing.redemption_sum_general > 0:
-						end_date+relativedelta(months=+1)
+						leasing_month_list.append(end_date)
+					leasing_month_list.insert(0, start_date)
+					leasing_pay_list = [leasing.monthly_lease_payment for month in range(1, leasing.term_leasing_contract)]
+					leasing_pay_list.insert(0,-self.capex.amount_capital_expenditure) #добавляем в начало лизинговый платеж
+					leasing_pay_list.insert(1,self.leasing_initial_payment(leasing))
+					if leasing.redemption_sum_general > 0:
+						leasing_pay_list.append(leasing.redemption_sum_general) #добавляем в конец выкупной платеж
 
-					leasing_index = 0 #индекс для работы с списками платежей и дат лизинга
-					if month >= start_date and month <= end_date: #если дата больше даты начала контракта лизинга и меньше даты окончания контракта
-						leasing_month_list = daterange(start_date, end_date, datetime=False) #список дат периода контракта
-						leasing_pay_list = []
-						for contract_month in range(0, leasing.term_leasing_contract): #формируем список платежей лизинга
-							leasing_pay_list.append(leasing.monthly_lease_payment)
-						leasing_pay_list.insert(0,self.leasing_initial_payment(leasing)) #добавляем в начало лизинговый платеж
-						if leasing.redemption_sum_general > 0:
-							leasing_pay_list.append(leasing.redemption_sum_general) #добавляем в конец выкупной платеж
+					rate = 1+xirr(leasing_pay_list, leasing_month_list) #эффективная ставка
+					days=monthrange(month.year, month.month)[1]/365 #количество дней в текущем месяце
+					if leasing_index==0:
+						days=0
 
-						rate = xirr(leasing_pay_list, leasing_month_list) #эффективная ставка
-
-
-						days = (month+relativedelta(months=+1)-month).days/365 #количество дней в текущем месяце
-						leasing_cost = -((leasing_remainder
-											*(1+rate)
-											**days
-											-leasing_remainder)
-											/(1+vat_rate(leasing.VAT_rate)/100)) #лизинговый расход
-
-						leasing_interests += leasing_cost #добавляем его в общее значение для всех лизингов
-
-						leasing_remainder = (leasing_remainder
-											+leasing_cost
-											*(1+vat_rate(leasing.VAT_rate)/100)
-											+leasing_pay_list[leasing_index]) #меняем лизинговый остаток
-						leasing_index+1 #добавляем лизинговый индекс, если итерируемая дата находится в диапазоне даты контракта лизинга
-						if minus:
-							leasing_interests-leasing.monthly_lease_payment/(1+vat_rate(leasing.VAT_rate)/100)
+					leasing_cost = (leasing_remainder*rate**days-leasing_remainder)/(1+vat_rate(leasing.VAT_rate)/100) #лизинговый расход
+					leasing_interests += leasing_cost #добавляем его в общее значение для всех лизингов
+					leasing_index+=1
+					leasing_remainder = (leasing_remainder
+										+leasing_cost
+										*(1+vat_rate(leasing.VAT_rate)/100)
+										-leasing_pay_list[leasing_index]) #меняем лизинговый остаток
+					if minus:
+						leasing_interests-leasing.monthly_lease_payment/(1+vat_rate(leasing.VAT_rate)/100)
 			leasing_costs_list.append(leasing_interests) #добавляем итоговые лизинговые расходы 
 
 		return leasing_costs_list
+
+	def leasings_costs(self, minus=False):
+		list_=None
+		for index, leasing in enumerate(self.leasings.all()):
+			costs=self.leasings_costs_for_leasing(leasing)
+			print(len(costs))
+			if index==0:
+				list_ = costs
+			else:
+				list_ = list(map(sum, zip(list_,costs)))
+		return list_
+
+
+
 
 	#является полем
 	def cost_price(self, month:int)-> float:
@@ -224,7 +233,7 @@ class ProfitAndLossPlan:
 		'''
 		opexs = self.opexs.all()
 		qs = opexs.exclude(cost_types_by_economic_grouping__in=[8, 9]) #исключаем комм. и упр. расходы
-		costs = 0
+		costs = self.amount_expenses(qs, month)
 		costs += self.ndpi(month) #добавляем ndpi
 		costs += self.excise(month) #добавляем акциз
 		costs += self.depreciation(month) #добавляем амортизацию
@@ -406,12 +415,15 @@ class ProfitAndLossPlan:
 		calculation_frequency = indexing_period(self.taxs.calculation_frequency)#частота расчета
 		accumulative_number=0
 		for index, month in enumerate(self.daterange):
-			accumulative_number+=self.income_tax_for_month(index)#накапливаем налог на прибыль 
-			if index%calculation_frequency==0 and index!=0 and accumulative_number >0:
-				income_tax_list.append(accumulative_number)#добавляем накопленный налог на прибыль и обнуляем счетчик
-				accumulative_number = 0
-			else:
-				income_tax_list.append(0)
+			if self.taxs.tax_simulation==0:
+				accumulative_number+=self.income_tax_for_month(index)#накапливаем налог на прибыль 
+				if index%calculation_frequency==0 and accumulative_number>0:
+					income_tax_list.append(accumulative_number)#добавляем накопленный налог на прибыль и обнуляем счетчик
+					accumulative_number = 0
+				else:
+					income_tax_list.append(0)
+			else: #если моделирование налогов "стандартное"
+				income_tax_list.append(self.income_tax_for_month(index))
 
 		return income_tax_list
 

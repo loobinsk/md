@@ -11,6 +11,22 @@ from .models import Calculation, ResultFinancialAnalys, Balance, CashFlowPlan, P
 from project_financing_sources.models import LeasingContract, Credit
 
 
+class GetBasicCalcData2(APIView):
+
+	def get(self, request):
+		ResultFinancialAnalys.objects.all().delete()
+		Balance.objects.all().delete()
+		CashFlowPlan.objects.all().delete()
+		ProfitAndLossPlan.objects.all().delete()
+
+		calc = Calculation.objects.all().first()
+		PL = profit_and_loss.ProfitAndLossPlan(calc)
+		ls = LeasingContract.objects.first()
+		data = PL.leasings_costs(ls)
+
+
+		return Response(data)
+
 class GetBasicCalcData(APIView):
 
 	def get(self, request):
@@ -30,18 +46,6 @@ class GetBasicCalcData(APIView):
 		RS.add_data_in_db()
 		return Response('Все отлично')
 
-class GetBasicCalcData2(APIView):
-
-	def get(self, request, pk):
-		pk=int(pk)
-		calc = Calculation.objects.all().first()
-		bc = profit_and_loss.ProfitAndLossPlan(calc)
-		ff = flow_funds.FlowFunds(calc)
-		date = ff.get_change_working_capital(3)
-		return Response(date)
-		# dict_data = bc.get_profit_and_loss_plan(pk)
-
-		# return Response(dict_data)
 
 class GetFlowFunds(APIView):
 
