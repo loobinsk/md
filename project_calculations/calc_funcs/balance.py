@@ -91,7 +91,7 @@ class BalanceCalc:
 		'''получить нераспределенную прибыль'''
 		start_value = 0
 		values_list = []
-		for month, date in enumerate(self.FL.daterange):
+		for month, date in enumerate(self.PL.daterange):
 			value = start_value+self.PL.net_profit(month)
 			start_value = value
 			if month != self.FL.daterange[0]:

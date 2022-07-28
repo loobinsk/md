@@ -24,7 +24,6 @@ class GetBasicCalcData2(APIView):
 		ls = LeasingContract.objects.first()
 		data = PL.leasings_costs(ls)
 
-
 		return Response(data)
 
 class GetBasicCalcData(APIView):
@@ -37,13 +36,13 @@ class GetBasicCalcData(APIView):
 
 		calc = Calculation.objects.all().first()
 		PL = profit_and_loss.ProfitAndLossPlan(calc)
-		FL = flow_funds.FlowFunds(calc)
-		BL = balance.BalanceCalc(calc)
-		RS = results.FinancialAnalysisResult(calc)
+		# FL = flow_funds.FlowFunds(calc)
+		# BL = balance.BalanceCalc(calc)
+		# RS = results.FinancialAnalysisResult(calc)
 		PL.add_data_in_db()
-		FL.add_data_in_db()
-		BL.add_data_in_db()
-		RS.add_data_in_db()
+		# FL.add_data_in_db()
+		# BL.add_data_in_db()
+		# RS.add_data_in_db()
 		return Response('Все отлично')
 
 

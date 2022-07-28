@@ -36,6 +36,7 @@ class ProfitAndLossPlan:
 		self.leasings_costs_list = self.leasings_costs()
 		self.leasings_costs_list_minus = self.leasings_costs(minus=True)
 		self.income_tax_list = self.income_tax()
+		print(len(self.income_tax_list))
 		
 	def indexation(self, period, indexation_value):
 		"""получить список с значениями индексации на каждый месяц в периоде продаж проекта.
@@ -215,7 +216,6 @@ class ProfitAndLossPlan:
 		list_=None
 		for index, leasing in enumerate(self.leasings.all()):
 			costs=self.leasings_costs_for_leasing(leasing)
-			print(len(costs))
 			if index==0:
 				list_ = costs
 			else:
@@ -267,7 +267,7 @@ class ProfitAndLossPlan:
 		credit -- объект кредита'''
 		interest_expenses_list = {}
 		date_in = credit.date_in.date()
-		for month in range(credit.grace_period_interest,credit.tenor+1):
+		for month in range(credit.grace_period_interest,credit.tenor):
 			date = date_in+relativedelta(months=+month)
 			interest_expense=None
 			if credit.calculation_type==0:
