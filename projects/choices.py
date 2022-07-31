@@ -74,10 +74,12 @@ TAX_SIMULATION = (
 y = 0
 q = 1
 m = 2
+pq =3
 VALUE_INDEXATION_PERIOD = (
 	(y, 'По годам'),
 	(q, 'По кварталам'),
 	(m, 'По месяцам'),
+	(pq, 'По полугодиям'),
 	)
 
 PCs = 0

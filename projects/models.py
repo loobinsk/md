@@ -1,3 +1,5 @@
+from django.utils import timezone as datetime
+from dateutil.relativedelta import relativedelta
 from django.db import models
 from account.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -93,14 +95,11 @@ class AdditionalProjectInformation(models.Model):
 	user_code = models.CharField('Пользовательский (внутренний) код проекта',
 							max_length=20,
                             blank=True, null=True)
-	init_date = models.DateTimeField('Дата инициализации проекта',
-								blank=True, null=True
-                                )
+	init_date = models.DateTimeField('Дата инициализации проекта',default=datetime.now)
 	contract = models.CharField('Номер инвестиционного контракта',
                             max_length=20,
                             blank=True, null=True)
-	contract_date = models.DateTimeField('Дата инвестиционного контракта',
-                            blank=True, null=True)
+	contract_date = models.DateTimeField('Дата инвестиционного контракта',default=datetime.now)
 	full_name_person_responsible = models.CharField(max_length=255, 
 													blank=True, null=True)
 
@@ -125,8 +124,7 @@ class CopiedProject(models.Model):
 class ProjectCompany(models.Model):
 	'''Планируемая компания для проекта'''
 	project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='project_company')
-	date_init = models.DateTimeField('Планируемая дата регистрации предприятия',
-								blank=True, null=True
+	date_init = models.DateTimeField('Планируемая дата регистрации предприятия',default=datetime.now,
                                 )
 	name = models.CharField('Рабочее название предприятия', 
 							max_length=255)

@@ -29,12 +29,16 @@ class FlowFunds:
 	def init_sales_count(self):
 		if self.daterange[0]<self.PLPlan.daterange[0]:
 			delta = relativedelta(self.PLPlan.daterange[0], self.daterange[0])
-			return delta.years*12+delta.months
+			return delta.years*12+delta.months+1
 		else:
 			return 0
 
 	def sales_count(self, count):
-		return count-self.init_sales_count()
+		count = count-self.init_sales_count()
+		if count < 0 and count <= len(self.PLPlan.daterange):
+			return None
+		else:
+			return count
 
 	def daterange_min_date(self):
 		'''возвращает минимальную дату для таблицы движения ден. средств'''
@@ -141,7 +145,10 @@ class FlowFunds:
 				else:
 					total_value += change
 				if self.project.fin_source_leasing:
-					total_value += self.PLPlan.leasings_costs_list[self.sales_count(month)]
+					sales_count = self.sales_count(month)
+					if sales_count:
+ 						total_value += self.PLPlan.leasings_costs_list[sales_count]
+
 					for leasing in self.leasings.all():
 						if leasing.distribution_redemption_switch:
 							if month != 0 or month != len(self.daterange):
@@ -155,9 +162,11 @@ class FlowFunds:
 
 	def income_tax(self, month):
 		'''получить налог на прибыль'''
-		if self.daterange[month]>self.PLPlan.daterange[0]:
-			return self.PLPlan.income_tax_list[self.sales_count(month)]
-		else: return 0
+		sales_count = self.sales_count(month)
+		if self.daterange[month]>self.PLPlan.daterange[0] and sales_count:
+			return self.PLPlan.income_tax_list[sales_count]
+		else: 
+			return 0
 
 	def net_cash_flow_operating_activities(self, month):
 		'''получить чистый денежный поток по операционной деятельности'''
@@ -258,7 +267,8 @@ class FlowFunds:
 	def interest_payment(self, month):
 		'''Получить оплату процентов'''
 		credits = self.credits.all()
-		return -self.PLPlan.project_interest_expenses(credits, month=month)
+
+		return -self.PLPlan.project_interest_expenses(credits, month=self.sales_count(month))
 
 
 	def leasing_payment(self, month):

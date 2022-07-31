@@ -36,7 +36,6 @@ class ProfitAndLossPlan:
 		self.leasings_costs_list = self.leasings_costs()
 		self.leasings_costs_list_minus = self.leasings_costs(minus=True)
 		self.income_tax_list = self.income_tax()
-		print(len(self.income_tax_list))
 		
 	def indexation(self, period, indexation_value):
 		"""получить список с значениями индексации на каждый месяц в периоде продаж проекта.
@@ -108,9 +107,13 @@ class ProfitAndLossPlan:
 	#является полем
 	def revenue(self, month:int)-> float:
 		'''Получить итоговую выручку'''
-		sales_revenue = self.sales_revenue(month)
-		object_revenue = self.object_revenue(month)
-		return sales_revenue+object_revenue
+		revenue=0
+		if month:
+			sales_revenue = self.sales_revenue(month)
+			object_revenue = self.object_revenue(month)
+			revenue = sales_revenue+object_revenue
+		
+		return revenue
 
 	#является полем для всех расходов
 	def amount_expenses(self, queryset, month, add_vat=False):
@@ -119,20 +122,22 @@ class ProfitAndLossPlan:
 		queryset -- qs с опексами
 		'''
 		opex_price = 0
-		for opex in queryset:
-			price = opex.price
-			if opex.price_indexation:
-				price = price*self.inflation_indexation[month]
+		if month:
+			for opex in queryset:
+				price = opex.price
+				if opex.price_indexation:
+					price = price*self.inflation_indexation[month]
 
-			if opex.types_business_activity_costs == 1:
-				price = price*self.value_indexation[month]
+				if opex.types_business_activity_costs == 1:
+					price = price*self.value_indexation[month]
 
-			price = price/(1+vat_rate(opex.VAT_rate)/100)
-			if add_vat:
-				price*vat_rate(opex.VAT_rate)/100
-			opex_price+=price
+				price = price/(1+vat_rate(opex.VAT_rate)/100)
+				if add_vat:
+					price*vat_rate(opex.VAT_rate)/100
+				opex_price+=price
 
 		return opex_price
+
 
 	def ndpi(self, month:int)-> float:
 		'''Получить ндпи'''
@@ -293,16 +298,17 @@ class ProfitAndLossPlan:
 		Keyword arguments:
 		queryset -- qs с кредитами'''
 		total_interest_expenses = 0
-		if capex_date:
-			date = capex_date
-		else:
-			date = self.daterange[month]
+		if month:
+			if capex_date:
+				date = capex_date
+			else:
+				date = self.daterange[month]
 
-		for credit in queryset:
-			credit = self.credit_interest_expenses(credit) #получаем словарь с проц. расходами
-			date = str(date.strftime("%Y-%m"))+'-'+list(credit)[0][-2:]
-			expense = credit.get(date,0)# получаем проц. расход за определенную дату
-			total_interest_expenses += expense
+			for credit in queryset:
+				credit = self.credit_interest_expenses(credit) #получаем словарь с проц. расходами
+				date = str(date.strftime("%Y-%m"))+'-'+list(credit)[0][-2:]
+				expense = credit.get(date,0)# получаем проц. расход за определенную дату
+				total_interest_expenses += expense
 
 		return total_interest_expenses
 
@@ -437,8 +443,11 @@ class ProfitAndLossPlan:
 	#является полем
 	def ebitda(self, month:int)-> float:
 		'''ебитда'''
-		ebitda = self.ebit(month)+self.depreciation(month)
-		return round(ebitda,2)
+		ebitda = 0
+		if month:
+			ebitda = self.ebit(month)+self.depreciation(month)
+
+		return ebitda
 
 	def add_data_in_db(self):
 		'''Добавить все данные в таблицу ProfitAndLossPlan'''

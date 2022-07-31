@@ -38,7 +38,7 @@ class Calculation(models.Model):
 
 class ProfitAndLossPlan(models.Model):
 	calculation = models.ForeignKey(Calculation, on_delete=models.CASCADE)
-	month = models.DateField('Месяц, к которому относятся значения')
+	month = models.DateTimeField('Месяц, к которому относятся значения')
 
 	revenue = models.FloatField('Выручка')
 	сost_price = models.FloatField('Себестоимость')
@@ -57,7 +57,7 @@ class ProfitAndLossPlan(models.Model):
 
 class CashFlowPlan(models.Model):
 	calculation = models.ForeignKey(Calculation, on_delete=models.CASCADE)
-	month = models.DateField('Месяц, к которому относятся значения')
+	month = models.DateTimeField('Месяц, к которому относятся значения')
 
 	EBITDA = models.FloatField('EBITDA')
 	working_weight_change = models.FloatField('Изменение рабочего капитала')
@@ -83,7 +83,7 @@ class CashFlowPlan(models.Model):
 
 class Balance(models.Model):
 	calculation = models.ForeignKey(Calculation, on_delete=models.CASCADE)
-	month = models.DateField('Месяц, к которому относятся значения')
+	month = models.DateTimeField('Месяц, к которому относятся значения')
 
 	fixed_assets = models.FloatField('Основные средства')
 	Total_non_current_assets = models.FloatField('Итого внеоборотные активы')
@@ -102,7 +102,7 @@ class Balance(models.Model):
 
 class ResultFinancialAnalys(models.Model):
 	calculation = models.ForeignKey(Calculation, on_delete=models.CASCADE)
-	month = models.DateField('Месяц, к которому относятся значения')
+	month = models.DateTimeField('Месяц, к которому относятся значения')
 
 	return_on_sales_rot = models.FloatField('Рентабельность продаж (ROS)')
 	return_on_equity_roe = models.FloatField('Рентабельность собственного капитала (ROE)')
@@ -121,7 +121,7 @@ class ResultFinancialAnalys(models.Model):
 
 class MainParameter(models.Model):
 	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE)
-	duration = models.DateField('Длительность проекта', blank=True)
+	duration = models.DateTimeField('Длительность проекта', blank=True)
 	start_date = models.DateField('Начало проекта')
 	end_date = models.DateField('Окончание проекта')
 	rating = models.PositiveIntegerField('Рейтинг проекта')

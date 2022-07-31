@@ -1,3 +1,5 @@
+from django.utils import timezone as datetime
+from dateutil.relativedelta import relativedelta
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -6,6 +8,7 @@ from projects import choices
 from .services import get_duration
 
 
+def next_month(): return datetime.now()+relativedelta(months=+1)
 class SalesInit(models.Model):
 	'''данные для моделирования продаж'''
 	project = models.ForeignKey(project_models.Project, on_delete=models.CASCADE)
@@ -14,15 +17,12 @@ class SalesInit(models.Model):
 	product_unit = models.PositiveSmallIntegerField('применяемая единица измерения продукта', 
 											choices=choices.UNITS,
                                             default=0)
-	start_date = models.DateTimeField('Дата начала продаж',
-								blank=True, null=True)
-	end_date = models.DateTimeField('Дата окончания продаж',
-								blank=True, null=True)
-	duration = models.CharField('Длительность', max_length=255, default='0 лет 0 месяцев 0 дней')
+	start_date = models.DateTimeField('Дата начала продаж',default=datetime.now)
+	end_date = models.DateTimeField('Дата окончания продаж',default=next_month)
 	sales_volume = models.FloatField('объем продаж в единицах продаж до расчета сезонности и индексации',
-                                               default=0,
-                                               validators=[MinValueValidator(0)],
-                                               )
+                                       default=0,
+                                       validators=[MinValueValidator(0)],
+                                       )
 	VAT = models.PositiveSmallIntegerField('Ставка НДС',
 										choices=choices.RATES,
 										default=0,
@@ -42,16 +42,16 @@ class SalesInit(models.Model):
 																	default=0)
 	inflation_indexation = models.FloatField('Коэффициент индексации на инфляцию',
 											default=1,
-		                                    validators=[MinValueValidator(1), ])
+		                                    validators=[MinValueValidator(0), ])
 	price = models.FloatField('Цена продукции',
 							default=0,
                             validators=[MinValueValidator(0), ]
                             )
-
-	def save(self, *args, **kwargs):
+	def duration(self):
 		if self.start_date and self.end_date:
-			self.duration = get_duration(self.start_date, self.end_date)
-		super(SalesInit, self).save(*args, **kwargs)
+			return get_duration(self.start_date, self.end_date)
+		else:
+			return '0 лет 0 месяцев 0 дней'
 
 	def __str__(self):
 		return self.product_name

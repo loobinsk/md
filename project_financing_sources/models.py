@@ -1,4 +1,4 @@
-import datetime
+from django.utils import timezone as datetime
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
@@ -25,13 +25,13 @@ class OwnFund(models.Model):
 									validators=[MinValueValidator(0), ],
 									default=0,)
 	name = models.CharField(max_length=255, default='Новый взнос')
-	source_date = models.DateTimeField('Дата вложения собственных средств', blank=True, null=True)
+	source_date = models.DateTimeField('Дата вложения собственных средств',default=datetime.now)
 	source_investor = models.CharField('Инвестор',
 										max_length=255, blank=True, null=True)
 	create_date = models.DateTimeField(auto_now_add=True)
 
 	def __str__(self):
-		return self.variant.variant_name
+		return self.name
 
 class CreditVariant(models.Model):
 	project = models.ForeignKey(Project, on_delete=models.CASCADE)
@@ -48,13 +48,12 @@ class Credit(models.Model):
 	name=models.CharField(max_length=255, default='Новый кредит')
 	lender = models.TextField('Банк',
 							max_length=350, blank=True, null=True)
-	date = models.DateTimeField('Дата договора',
-							blank=True, null=True)
+	date = models.DateTimeField('Дата договора',default=datetime.now)
 	sum_in_currancy = models.FloatField('Сумма',
 										validators=[MinValueValidator(0), ],
                                         default=0
                                         )
-	date_in = models.DateTimeField('Дата получения', blank=True, null=True)
+	date_in = models.DateTimeField('Дата получения',default=datetime.now)
 	capitalization = models.BooleanField('Капитализация процентов', 
 										default=False,)
 	interest_rate = models.FloatField('Процентная ставка, %',
@@ -76,7 +75,7 @@ class Credit(models.Model):
 	create_date = models.DateTimeField(auto_now_add=True)
 
 	def __str__(self):
-		return self.variant.variant_name
+		return self.name
 
 	def credit_share(self):
 		credits = self.variant.credits.all().count()
@@ -93,18 +92,19 @@ class LeasingContractVariant(models.Model):
 
 class LeasingContract(models.Model):
 	'''Договоры лизинга'''
+
 	variant = models.ForeignKey(LeasingContractVariant, on_delete=models.CASCADE, related_name='leasings')
 	lessor = models.TextField('Лизингодатель',
 							max_length=350,
                             blank=True, null=True)
 	name=models.CharField(max_length=255, default='Лизинговая операция')
 	object_cost = models.FloatField('Стоимость объекта', default=0, validators=[MinValueValidator(0), ],)
-	date_planned_accounting_object = models.DateTimeField('Дата планового учета объекта', blank=True, null=True)
+	date_planned_accounting_object = models.DateTimeField('Дата планового учета объекта', default=datetime.now)
 	initial_payment = models.FloatField('Доля первоначального взноса',
-										validators=[MinValueValidator(0), ],
+										validators=[MinValueValidator(0), MaxValueValidator(70)],
                                         default=0,
                                         )
-	contract_start_date = models.DateTimeField('Дата договора', blank=True, null=True)
+	contract_start_date = models.DateTimeField('Дата договора', default=datetime.now)
 	term_leasing_contract = models.PositiveIntegerField('Срок лизингового договора, мес', default=0)
 	monthly_lease_payment = models.FloatField('Ежемесячные лизинговые платежи (с НДС), руб',
 												validators=[MinValueValidator(0), ],
@@ -120,14 +120,14 @@ class LeasingContract(models.Model):
 	create_date = models.DateTimeField(auto_now_add=True)
 
 	def __str__(self):
-		return self.lessor
+		return self.name
 
 	def price_object(self):
 		value=0.00
 		return value
 
 	def accounting_date(self):
-		value=datetime.datetime.now()
+		value=datetime.now()
 		return value
 
 	def total_pays(self):

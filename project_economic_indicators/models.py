@@ -1,3 +1,5 @@
+from django.utils import timezone as datetime
+from dateutil.relativedelta import relativedelta
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -6,7 +8,7 @@ from projects import choices
 
 from .services import get_duration
 
-
+def next_month(): return datetime.now()+relativedelta(months=+1)
 class Capex(models.Model):
 	'''данные о суммах капитальных расходов'''
 	project = models.ForeignKey(Project, on_delete=models.CASCADE)
@@ -37,13 +39,8 @@ class Capex(models.Model):
 	annual_tax_depreciation = models.FloatField('Годовая налоговая аммортизация',
 												validators=[MinValueValidator(0), ],
 												default=0,)
-	start_date = models.DateTimeField('Дата начала',
-								blank=True, null=True)
-	end_date = models.DateTimeField('Дата окончания',
-								blank=True, null=True)
-	duration = models.CharField('Длительность проекта', max_length=255,
-								default='0 лет 0 месяцев 0 дней',
-								blank=True, null=True)
+	start_date = models.DateTimeField('Дата начала', default=datetime.now)
+	end_date = models.DateTimeField('Дата окончания', default=next_month)
 	VAT_refund = models.BooleanField('Планируется возмещение НДС из бюджета', 
 									default=False,)
 	leasing_switch = models.BooleanField('Объект будет в лизинге', default=False)
@@ -60,7 +57,7 @@ class Capex(models.Model):
 										default=0,
                                         validators=[MinValueValidator(0), ],
                                         )
-	liquidation_cost_VAT_rate = models.FloatField('Ставка НДС с лик. расходов',
+	liquidation_cost_VAT_rate = models.PositiveSmallIntegerField('Ставка НДС с лик. расходов',
 								default=0,
 								choices=choices.RATES,
 								validators=[MinValueValidator(0), MaxValueValidator(100)],
@@ -69,7 +66,7 @@ class Capex(models.Model):
                                             validators=[MinValueValidator(0), ],
                                             default=0,
                                         )
-	liquidation_profit_VAT_rate = models.FloatField('Ставка НДС от суммы от продаж в конце проекта', default=0,
+	liquidation_profit_VAT_rate = models.PositiveSmallIntegerField('Ставка НДС от суммы от продаж в конце проекта', default=0,
 								validators=[MinValueValidator(0), MaxValueValidator(100)],
 								choices=choices.RATES,
                                 )
@@ -83,12 +80,13 @@ class Capex(models.Model):
                                                 default=0,)
 
 	def __str__(self):
-		return self.variant_name
+		return self.name
 
-	def save(self, *args, **kwargs):
+	def duration(self):
 		if self.start_date and self.end_date:
-			self.duration = get_duration(self.start_date, self.end_date)
-		super(Capex, self).save(*args, **kwargs)
+			return get_duration(self.start_date, self.end_date)
+		else:
+			return '0 лет 0 месяцев 0 дней'
 
 
 class CapexObjectSetting(models.Model):

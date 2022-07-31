@@ -1,7 +1,7 @@
 from calendar import monthrange
 from dateutil.relativedelta import relativedelta
 from .intermediate_functions import min_date, daterange
-from .intermediate_functions import vat_rate, vat_rate
+from .intermediate_functions import vat_rate, compare_dates
 from .profit_and_loss import ProfitAndLossPlan
 from .flow_funds import FlowFunds
 from ..models import Balance
@@ -11,6 +11,7 @@ class BalanceCalc:
 	'''план движения денежных средств'''
 	def __init__(self, calculation):
 		self.calculation = calculation
+		self.project = calculation.project
 		self.FL = FlowFunds(calculation)
 		self.PL = ProfitAndLossPlan(calculation)
 		self.capex = calculation.variant_capex
@@ -20,12 +21,18 @@ class BalanceCalc:
 
 	def fixed_assets(self, month):
 		'''получить основные средства'''
-		start_value = 0
 		values_list = []
 		for month, date in enumerate(self.FL.daterange):
-			value = start_value+self.FL.receipt_owners(month)
-			start_value = value
-			if month != self.FL.daterange[0]:
+			if self.project.financing_type != 3:
+				value = self.capex.amount_capital_expenditure/(1+vat_rate(capex.VAT_rate)/100)
+				credits = self.credits.filter(capitalization=True) #получаем кредиты с капитализацией процентов
+				value+=self.PL.project_interest_expenses(capex_date=date,queryset=credits)
+				value-=self.PL.depreciation(month)
+				if compare_dates(date, self.capex.end_date):
+					if self.capex.liquidation_cost_switch:
+						value+=self.capex.liquidation_cost/(1+vat_rate(self.capex.liquidation_cost_VAT_rate)/100)
+						value-=self.capex.liquidation_profit/(1+vat_rate(self.capex.liquidation_profit_VAT_rate)/100)
+
 				values_list.append(value)
 			else:
 				values_list.append(0)
