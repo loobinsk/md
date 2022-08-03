@@ -15,23 +15,32 @@ from project_taxes import models as tax_models
 class Calculation(models.Model):
 	project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name='calculation')
 	variant_sales = models.ForeignKey(SalesInit, on_delete=models.CASCADE,
-									verbose_name='Вариант продаж', related_name='variant_sales',)
+									verbose_name='Вариант продаж', related_name='variant_sales',
+									blank=True, null=True)
 	variant_opexs = models.ForeignKey(OpexVariant, on_delete=models.CASCADE,
-									verbose_name='Вариант затрат', related_name='variant_costs',)
+									verbose_name='Вариант затрат', related_name='variant_costs',
+									blank=True, null=True)
 	variant_capex = models.ForeignKey(Capex, on_delete=models.CASCADE,
-									verbose_name='Вариант кап. расходов', related_name='variant_capex',)
+									verbose_name='Вариант кап. расходов', related_name='variant_capex',
+									blank=True, null=True)
 	variant_taxs = models.ForeignKey(TaxPrm, on_delete=models.CASCADE,
-									verbose_name='Вариант налогов', related_name='variant_taxs',)
+									verbose_name='Вариант налогов', related_name='variant_taxs',
+									blank=True, null=True)
 	variant_discount_rate = models.ForeignKey(DiscountRate, on_delete=models.CASCADE,
-											verbose_name='Вариант ставки дисконтирования', related_name='variant_discount_rates',)
+											verbose_name='Вариант ставки дисконтирования', related_name='variant_discount_rates',
+											blank=True, null=True)
 	variant_own_funds = models.ForeignKey(OwnFundVariant, on_delete=models.CASCADE,
-										verbose_name='Вариант собственного капитала', related_name='variant_own_fund',)
+										verbose_name='Вариант собственного капитала', related_name='variant_own_fund',
+										blank=True, null=True)
 	variant_credits = models.ForeignKey(CreditVariant, on_delete=models.CASCADE,
-									verbose_name='Вариант банковского кредита', related_name='variant_credit',)
+									verbose_name='Вариант банковского кредита', related_name='variant_credit',
+									blank=True, null=True)
 	variant_leasing = models.ForeignKey(LeasingContractVariant, on_delete=models.CASCADE,
-									verbose_name='Вариант лизинга', related_name='variant_leasing',)
+									verbose_name='Вариант лизинга', related_name='variant_leasing',
+									blank=True, null=True)
 	variant_wk = models.ForeignKey(WorkingCapitalParameter, on_delete=models.CASCADE,
-									verbose_name='Вариант рабочего капитала', related_name='variant_wk',)
+									verbose_name='Вариант рабочего капитала', related_name='variant_wk',
+									blank=True, null=True)
 
 	def __str__(self):
 		return f'Расчет по проекту "{self.project.name}"'
@@ -100,6 +109,9 @@ class Balance(models.Model):
 	total_liabilities = models.FloatField('Итого обязательства')
 	Total_balance2 = models.FloatField('Итого баланс')
 
+	def __str__(self):
+		return self.calculation.project.name
+
 class ResultFinancialAnalys(models.Model):
 	calculation = models.ForeignKey(Calculation, on_delete=models.CASCADE)
 	month = models.DateTimeField('Месяц, к которому относятся значения')
@@ -119,29 +131,45 @@ class ResultFinancialAnalys(models.Model):
 	interim_liquidity_ratio = models.FloatField('Коэффициент промежуточной ликвидности')
 	current_liquidity_ratio = models.FloatField('Коэффициент текущей ликвидности')
 
+	def __str__(self):
+		return self.calculation.project.name
+
+class Rating(models.Model):
+	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE,related_name='rating')
+	rating = models.PositiveIntegerField('Рейтинг проекта')
+	comment = models.TextField('Комментарий к рейтингу')
+
+	def __str__(self):
+		return self.calculation.project.name
+
 class MainParameter(models.Model):
-	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE)
-	duration = models.DateTimeField('Длительность проекта', blank=True)
+	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE,related_name='main_parameters')
 	start_date = models.DateField('Начало проекта')
 	end_date = models.DateField('Окончание проекта')
-	rating = models.PositiveIntegerField('Рейтинг проекта')
 	
+	def duration():
+		return start_date-end_date
+
 	def __str__(self):
 		return self.calculation.project.name
 
 class FundingAmount(models.Model):
-	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE)
+	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE, related_name='funding_amounts')
 	capEx_amount = models.FloatField('Сумма CapEx (с НДС), руб')
 	amount_of_own_funds = models.FloatField('Сумма собственных средств, руб')
 	amount_of_borrowed_funds = models.FloatField('Сумма заемных средств, руб')
 	DE_ratio = models.FloatField('Коэффициент D/E')
 	average_Debt_EBITDA_ratio = models.FloatField('Средний коэффициент Debt/EBITDA')
 
+	def total_amount(self):
+		return self.amount_of_own_funds+self.amount_of_borrowed_funds
+
 	def __str__(self):
 		return self.calculation.project.name
 
 class AnnualAverage(models.Model):
-	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE)
+	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE,
+									related_name='annual_average')
 	average_annual_revenue = models.FloatField('Среднегодовая выручка (без НДС), Руб')
 	average_annual_operating_costs = models.FloatField('Среднегодовые операционные затраты с амортизайцией (без НДС), руб')
 	average_annual_net_profit = models.FloatField('Среднегодовая чистая прибыль, руб')
@@ -153,7 +181,8 @@ class AnnualAverage(models.Model):
 		return self.calculation.project.name
 
 class BasicIndicator(models.Model):
-	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE)
+	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE,
+									related_name='basic_indicators')
 	discount_rate = models.FloatField('ставка дисконтирования, %')
 	refinancing_rate = models.FloatField('ставка рефинансирования, %')
 	net_present_value_npv = models.FloatField('чистая приведенная стоимость npv, руб')
@@ -165,7 +194,8 @@ class BasicIndicator(models.Model):
 		return self.calculation.project.name
 
 class PaybackProject(models.Model):
-	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE)
+	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE,
+									related_name='payback_project')
 	nominal_payback_period = models.DateField('Номинальный срок окупаемости')
 	discounted_payback_period = models.DateField('Дисконтированный срок окупаемости')
 

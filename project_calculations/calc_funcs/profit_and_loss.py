@@ -9,11 +9,7 @@ from project_calculations.models import ProfitAndLossPlan as model
 from .intermediate_functions import xirr, vat_rate, compare_dates
 from .intermediate_functions import daterange, indexing_period
 
-
-
-class ProfitAndLossPlan:
-	'''План прибылей и убытков'''
-
+class InitDate:
 	def __init__(self, calculation):
 		'''init calcualtion'''
 		self.calculation = calculation
@@ -53,6 +49,9 @@ class ProfitAndLossPlan:
 					indexation*=indexation_value
 			indexation_list.append(indexation)
 		return indexation_list
+
+class ProfitAndLossPlanCalculation(InitDate):
+	'''План прибылей и убытков'''
 
 	def depreciation(self, month:int)-> float:
 		'''получить аммортизацию проекта'''
@@ -176,7 +175,6 @@ class ProfitAndLossPlan:
 
 		return payment
 
-
 	def leasings_costs_for_leasing(self, leasing, minus=False)->list:
 		'''получить лизинговые расходы
 		считает за весь период и возвращает список'''
@@ -220,15 +218,19 @@ class ProfitAndLossPlan:
 	def leasings_costs(self, minus=False):
 		list_=None
 		for index, leasing in enumerate(self.leasings.all()):
-			costs=self.leasings_costs_for_leasing(leasing)
-			if index==0:
-				list_ = costs
+			if minus:
+				costs=self.leasings_costs_for_leasing(leasing, minus=True)
+				if index==0:
+					list_ = costs
+				else:
+					list_ = list(map(sum, zip(list_,costs)))
 			else:
-				list_ = list(map(sum, zip(list_,costs)))
+				costs=self.leasings_costs_for_leasing(leasing)
+				if index==0:
+					list_ = costs
+				else:
+					list_ = list(map(sum, zip(list_,costs)))
 		return list_
-
-
-
 
 	#является полем
 	def cost_price(self, month:int)-> float:
@@ -449,6 +451,15 @@ class ProfitAndLossPlan:
 
 		return ebitda
 
+	def ebitda_list(self):
+		total_value = 0
+		for month in len(self.daterange):
+			total_value+=self.ebitda(month)
+
+		return total_value/len(self.daterange)
+	
+
+class DBLoadData(ProfitAndLossPlanCalculation):
 	def add_data_in_db(self):
 		'''Добавить все данные в таблицу ProfitAndLossPlan'''
 		opexs = self.opexs
@@ -473,27 +484,3 @@ class ProfitAndLossPlan:
 			pf_and_loss_plan.save()
 		time2=datetime.datetime.now()-time_1
 		return 'Все данные успешно добавлены за', time2, 'cек'
-
-	def profit_and_loss_plan(self,month):
-		'''получить данные за определенный месяц'''
-		data = {}
-		opexs = self.calculation.variant_sales.sales_init.opexs
-		commercial_costs = opexs.filter(cost_types_by_economic_grouping=8)
-		managerial_costs = opexs.filter(cost_types_by_economic_grouping=9)
-		credits = self.calculation.variant_credit.credits.all()
-		income_tax = self.income_tax_frequency()
-		date = self.daterange[month]
-		data['выручка']=round(self.revenue(month), 2)
-		data['себестоимость']=round(self.cost_price(month), 2)
-		data['валовая прибыль']=round(self.cost_price(month), 2)
-		data['себестоимость']=round(self.gross_profit(month), 2)
-		data['комм. расходы']=round(self.amount_expenses(commercial_costs, month), 2)
-		data['упр. расходы']=round(self.amount_expenses(managerial_costs, month), 2)
-		data['ebit']=round(self.ebit(month), 2)
-		data['проц. расходы']=round(self.project_interest_expenses(date=date, queryset=credits), 2)
-		data['прибыль до налогооблажения']=round(self.profit_before_tax(month), 2)
-		data['налог на прибыль']=round(income_tax[month], 2)
-		data['чистая прибыль']=round(self.net_profit(month), 2)
-		data['ебитда']=round(self.ebitda(month), 2)
-
-		return data 

@@ -1,14 +1,14 @@
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import filters
 from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status
+from project_calculations.models import Calculation
 from . import models, choices
 from . import serializers, permissions
-from rest_framework import status
-import traceback
-from django.shortcuts import get_object_or_404
 
 
 class GetProjectsView(generics.ListAPIView):
@@ -36,6 +36,7 @@ class CreateNewProject(APIView):
 			add_project_inf = models.AdditionalProjectInformation.objects.create(project=new_project)
 			copy_project = models.CopiedProject.objects.create(project=new_project)
 			project_company= models.ProjectCompany.objects.create(project=new_project)
+			calculation = Calculation.objects.create(project=new_project)
 			try:
 				date = new_project.calculation.variant_sales.sales_init.start_date
 			except:

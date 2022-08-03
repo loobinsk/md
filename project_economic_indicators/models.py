@@ -6,7 +6,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from projects.models import Project
 from projects import choices
 
-from .services import get_duration
+from project_sales.services import get_duration
 
 def next_month(): return datetime.now()+relativedelta(months=+1)
 class Capex(models.Model):

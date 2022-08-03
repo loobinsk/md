@@ -7,6 +7,15 @@ class OwnFundVariantSerializer(serializers.ModelSerializer):
 		model = models.OwnFundVariant
 		fields = '__all__'
 
+	def __init__(self, *args, **kwargs):
+		fields = kwargs.pop('fields', None)
+		super().__init__(*args, **kwargs)
+		if fields is not None:
+			allowed = set(fields)
+			existing = set(self.fields)
+			for field_name in existing - allowed:
+				self.fields.pop(field_name)
+
 class OwnFundSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.OwnFund
@@ -17,6 +26,15 @@ class CreditVariantSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.CreditVariant
 		fields = '__all__'
+
+	def __init__(self, *args, **kwargs):
+		fields = kwargs.pop('fields', None)
+		super().__init__(*args, **kwargs)
+		if fields is not None:
+			allowed = set(fields)
+			existing = set(self.fields)
+			for field_name in existing - allowed:
+				self.fields.pop(field_name)
 
 class CreditSerializer(serializers.ModelSerializer):
 	credit_share = serializers.FloatField(read_only=True)
@@ -29,6 +47,15 @@ class LeasingContractVariantSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.LeasingContractVariant
 		fields = '__all__'
+
+	def __init__(self, *args, **kwargs):
+		fields = kwargs.pop('fields', None)
+		super().__init__(*args, **kwargs)
+		if fields is not None:
+			allowed = set(fields)
+			existing = set(self.fields)
+			for field_name in existing - allowed:
+				self.fields.pop(field_name)
 
 class LeasingContractSerializer(serializers.ModelSerializer):
 	price_object = serializers.FloatField(read_only=True)
@@ -44,3 +71,12 @@ class WorkingCapitalParameterSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.WorkingCapitalParameter
 		fields = '__all__'
+
+	def __init__(self, *args, **kwargs):
+		fields = kwargs.pop('fields', None)
+		super().__init__(*args, **kwargs)
+		if fields is not None:
+			allowed = set(fields)
+			existing = set(self.fields)
+			for field_name in existing - allowed:
+				self.fields.pop(field_name)

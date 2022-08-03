@@ -1,5 +1,5 @@
 from .intermediate_functions import min_date, daterange, vat_rate
-from .profit_and_loss import ProfitAndLossPlan
+from .profit_and_loss import ProfitAndLossPlanCalculation
 from .flow_funds import FlowFunds
 from .balance import BalanceCalc
 from calendar import monthrange
@@ -11,7 +11,7 @@ class FinancialAnalysisResult:
 	def __init__(self, calculation):
 		self.calculation = calculation
 		self.FL = FlowFunds(calculation)
-		self.PL = ProfitAndLossPlan(calculation)
+		self.PL = ProfitAndLossPlanCalculation(calculation)
 		self.BL = BalanceCalc(calculation)
 		self.project=calculation.project
 
@@ -20,7 +20,7 @@ class FinancialAnalysisResult:
 		try:
 			return self.PL.net_profit(month)/self.PL.revenue(month)*100
 		except ZeroDivisionError:
-			return self.PL.net_profit(month)
+			return None
 
 	def return_on_equity_roe(self, month):
 		'''Рентабельность собственного капитала'''
@@ -29,21 +29,21 @@ class FinancialAnalysisResult:
 		try:
 			return net_profit/tq
 		except ZeroDivisionError:
-			return net_profit
+			return None
 
 	def return_on_assets_roa(self, month):
 		'''Рентабельность активов'''
 		try:
 			return self.PL.net_profit(month)/self.BL.total_balance1(month)*100
 		except ZeroDivisionError:
-			return self.PL.net_profit(month)
+			return None
 
 	def asset_turnover_ratio(self, month):
 		'''Коэффициент оборачиваемости активов'''
 		try:
 			return self.PL.net_profit(month)/self.BL.total_balance1(month)
 		except ZeroDivisionError:
-			return self.PL.net_profit(month)
+			return None
 
 
 	def сurrent_assets_turnover_ratio(self, month):
@@ -51,28 +51,28 @@ class FinancialAnalysisResult:
 		try:
 			return self.PL.net_profit(month)/self.BL.total_current_assets(month)
 		except ZeroDivisionError:
-			return self.PL.net_profit(month)
+			return None
 
 	def inventory_turnover_ratio(self, month):
 		'''Коэффициент оборачиваемости запасов'''
 		try:
 			return self.PL.cost_price(month)/self.BL.stocks(month)
 		except ZeroDivisionError:
-			return self.PL.cost_price(month)
+			return None
 
 	def accounts_receivable_turnover_ratio(self, month):
 		'''Коэффициент оборачиваемости дебиторской задолженности'''
 		try:
 			return self.PL.net_profit(month)/self.BL.accounts_payable(month)
 		except ZeroDivisionError:
-			return self.PL.net_profit(month)
+			return None
 
 	def accounts_payable_turnover_ratio(self, month):
 		'''Коэффициент оборачиваемости кредиторской задолженности'''
 		try:
 			return self.PL.cost_price(month)/self.BL.accounts_payable(month)
 		except ZeroDivisionError:
-			return self.PL.cost_price(month)
+			return None
 
 
 	def autonomy_coefficient(self, month):
@@ -80,7 +80,7 @@ class FinancialAnalysisResult:
 		try:
 			return self.BL.total_equity(month)/self.BL.total_balance2(month)
 		except ZeroDivisionError:
-			return self.BL.total_equity(month)
+			return None
 
 	def leverage_ratio_de(self, month):
 		'''Коэффициент левериджа (D/E)'''
@@ -90,28 +90,28 @@ class FinancialAnalysisResult:
 			try:
 				return self.BL.total_equity(month)/self.BL.borrowed_funds_list[month]
 			except ZeroDivisionError:
-				return self.BL.total_equity(month)
+				return None
 
 	def own_working_capital_ratio(self, month):
 		'''Коэффициент собственных оборотных средств'''
 		try:
 			return (self.BL.total_equity(month)-self.BL.total_non_current_assets(month))/self.BL.total_current_assets(month)
 		except ZeroDivisionError:
-			return (self.BL.total_equity(month)-self.BL.total_non_current_assets(month))
+			return None
 
 	def absolute_liquidity_ratio(self, month):
 		'''Коэффициент абсолютной ликвидности'''
 		try:
 			return self.BL.cash(month)/self.BL.accounts_payable(month)
 		except ZeroDivisionError:
-			return self.BL.cash(month)
+			return None
 
 	def interim_liquidity_ratio(self, month):
 		'''Коэффициент промежуточной ликвидности'''
 		try:
 			return (self.BL.cash(month)+self.FL.accounting_receivable_end(month))/self.BL.accounts_payable(month)
 		except ZeroDivisionError:
-			return (self.BL.cash(month)+self.FL.accounting_receivable_end(month))
+			return None
 
 
 	def current_liquidity_ratio(self, month):
@@ -119,7 +119,7 @@ class FinancialAnalysisResult:
 		try:
 			return self.BL.total_current_assets(month)/self.BL.accounts_payable(month)
 		except ZeroDivisionError:
-			return self.BL.total_current_assets(month)
+			return None
 
 
 	def add_data_in_db(self):

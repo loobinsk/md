@@ -2,7 +2,7 @@ from calendar import monthrange
 from dateutil.relativedelta import relativedelta
 from .intermediate_functions import min_date, daterange
 from .intermediate_functions import vat_rate, compare_dates
-from .profit_and_loss import ProfitAndLossPlan
+from .profit_and_loss import ProfitAndLossPlanCalculation
 from .flow_funds import FlowFunds
 from ..models import Balance
 
@@ -13,7 +13,7 @@ class BalanceCalc:
 		self.calculation = calculation
 		self.project = calculation.project
 		self.FL = FlowFunds(calculation)
-		self.PL = ProfitAndLossPlan(calculation)
+		self.PL = ProfitAndLossPlanCalculation(calculation)
 		self.capex = calculation.variant_capex
 		self.borrowed_funds_list = self.borrowed_funds()
 		self.authorized_capital_list = self.authorized_capital()

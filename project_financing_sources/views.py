@@ -30,7 +30,7 @@ class OwnFundVariantCreateView(generics.ListCreateAPIView):
 		user = self.request.user
 		return models.OwnFundVariant.objects.filter(project__author=user)
 
-class OwnFundVariantDetailView(generics.RetrieveUpdateAPIView):
+class OwnFundVariantDetailView(generics.RetrieveUpdateDestroyAPIView):
 	queryset = models.OwnFundVariant.objects.all()
 	serializer_class = serializers.OwnFundVariantSerializer
 	permission_classes = [permissions.IsOwner, IsAuthenticated]
@@ -55,7 +55,6 @@ class OwnFundVariantCopyView(APIView):
 							status=status.HTTP_400_BAD_REQUEST)
 
 class OwnFundListView(generics.ListCreateAPIView):
-	queryset = models.OwnFund.objects.all()
 	serializer_class = serializers.OwnFundSerializer
 	filter_backends = [DjangoFilterBackend]
 	filterset_fields = '__all__'

@@ -3,13 +3,13 @@ from numpy_financial import ppmt
 from dateutil.relativedelta import relativedelta
 from .intermediate_functions import min_date, daterange
 from .intermediate_functions import vat_rate, compare_dates
-from .profit_and_loss import ProfitAndLossPlan
+from .profit_and_loss import ProfitAndLossPlanCalculation
 from ..models import CashFlowPlan
 
 class FlowFunds:
 	'''план движения денежных средств'''
 	def __init__(self, calculation):
-		self.PLPlan = ProfitAndLossPlan(calculation)
+		self.PLPlan = ProfitAndLossPlanCalculation(calculation)
 
 		self.calculation = calculation
 		self.project = calculation.project
