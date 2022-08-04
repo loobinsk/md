@@ -25,34 +25,40 @@ class FinancialIndicatorSerializer(serializers.ModelSerializer):
 class MainParameterSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.MainParameter
-		fields = '__all__'
+		exclude = ['id', 'calculation',]
 
 class FundingAmountSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.FundingAmount
-		fields = '__all__'
+		exclude = ['id', 'calculation',]
 
 class AnnualAverageSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.AnnualAverage
-		fields = '__all__'
+		exclude = ['id', 'calculation',]
 
 class BasicIndicatorSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.BasicIndicator
-		fields = '__all__'
+		exclude = ['id', 'calculation',]
 
 class PaybackProjectSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.PaybackProject
-		fields = '__all__'
+		exclude = ['id', 'calculation',]
 
 class CalculationSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.Calculation
-		fields = '__all__'
+		exclude = ['id']
+
+class RatingSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = models.Rating
+		exclude = ['id', 'calculation',]
 
 class CalculationResultSerializer(serializers.ModelSerializer):
+	rating = RatingSerializer(read_only=True)
 	payback_project = PaybackProjectSerializer(read_only=True)
 	basic_indicators = BasicIndicatorSerializer(read_only=True)
 	annual_average = AnnualAverageSerializer(read_only=True)
@@ -61,6 +67,7 @@ class CalculationResultSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.Calculation
 		fields = [
+				'rating',
 				'project',
 				'payback_project', 
 				'basic_indicators', 

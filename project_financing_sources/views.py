@@ -127,7 +127,7 @@ class CreditVariantCreateView(generics.ListCreateAPIView):
 		user = self.request.user
 		return models.CreditVariant.objects.filter(project__author=user)
 
-class CreditVariantDetailView(generics.RetrieveUpdateAPIView):
+class CreditVariantDetailView(generics.RetrieveUpdateDestroyAPIView):
 	queryset = models.CreditVariant.objects.all()
 	serializer_class = serializers.CreditVariantSerializer
 	permission_classes = [permissions.IsOwner, IsAuthenticated]
@@ -162,6 +162,11 @@ class CreditsListView(generics.ListCreateAPIView):
 		user = self.request.user
 		return models.Credit.objects.filter(variant__project__author=user)
 
+def get_credit_shares(variant):
+	credits = variant.credits.all()
+	data = {credit.id: credit.credit_share() for credit in credits}
+	return data
+
 class CreditDetailView(generics.RetrieveUpdateDestroyAPIView):
 	queryset = models.Credit.objects.all()
 	serializer_class = serializers.CreditSerializer
@@ -169,20 +174,24 @@ class CreditDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 	def destroy(self, request, *args, **kwargs):
 		instance = self.get_object()
-		data={'variant_total_contributions': instance.variant.total_contributions()}
+		data={'variant_total_contributions': instance.variant.total_contributions(),
+			'credit_shares': get_credit_shares(instance.variant)}
 		self.perform_destroy(instance)
 		return Response(data)
 
 	def retrieve(self, request, pk=None):
 		instance = self.get_object()
 		serializer = self.get_serializer(instance)
+		shares = get_credit_shares(instance.variant)
+		print(get_credit_shares(instance.variant))
 		data={'credit': serializer.data, 
-			'variant_total_contributions': instance.variant.total_contributions()}
+			'variant_total_contributions': instance.variant.total_contributions(),
+			'credit_shares': shares}
 		return Response(data)
 
 class CreditCopyView(APIView):
 	def post(self, request, pk):
-		credit = get_object_or_404(models.CreditProject, pk=pk)
+		credit = get_object_or_404(models.Credit, pk=pk)
 		credit_variant = credit.variant
 		print(credit_variant)
 		if credit.variant.project.author==request.user:
@@ -191,15 +200,13 @@ class CreditCopyView(APIView):
 			credit.save()
 			credit_serializer=serializers.CreditSerializer(credit)
 			data = {'credit': credit_serializer.data,
-					'variant_total_contributions': credit.variant.total_contributions()
+					'variant_total_contributions': credit.variant.total_contributions(),
+					'credit_shares': get_credit_shares(credit.variant)
 				}
 			return Response(data, status=status.HTTP_200_OK)
 		else:
 			return Response({"detail": "У вас недостаточно прав для выполнения данного действия."}, 
 							status=status.HTTP_400_BAD_REQUEST)
-
-
-
 
 class LeasingEnums(APIView):
 	permission_classes = [IsAuthenticated]
@@ -228,7 +235,7 @@ class LeasingVariantCreateView(generics.ListCreateAPIView):
 		user = self.request.user
 		return models.LeasingContractVariant.objects.filter(project__author=user)
 
-class LeasingVariantDetailView(generics.RetrieveUpdateAPIView):
+class LeasingVariantDetailView(generics.RetrieveUpdateDestroyAPIView):
 	queryset = models.LeasingContractVariant.objects.all()
 	serializer_class = serializers.LeasingContractVariantSerializer
 	permission_classes = [permissions.IsOwner, IsAuthenticated]
@@ -282,7 +289,7 @@ class LeasingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class LeasingCopyView(APIView):
 	def post(self, request, pk):
-		leasing = get_object_or_404(models.LeasingContractProject, pk=pk)
+		leasing = get_object_or_404(models.LeasingContract, pk=pk)
 		leasing_variant = leasing.variant
 		print(leasing_variant)
 		if leasing.variant.project.author==request.user:
