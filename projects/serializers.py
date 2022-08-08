@@ -3,6 +3,19 @@ from rest_framework import serializers
 from . import models
 
 
+class DinamycFieldsModelSerializer(serializers.ModelSerializer):
+	def __init__(self, *args, **kwargs):
+		fields = kwargs.pop('fields', None)
+		rename = kwargs.pop('rename', None)
+		super().__init__(*args, **kwargs)
+		if fields is not None:
+			allowed = set(fields)
+			existing = set(self.fields)
+			for field_name in existing - allowed:
+				self.fields.pop(field_name)
+			if rename is not None:
+				self.fields['name']=self.fields.pop('variant_name')
+
 class CurrencySerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.Currency

@@ -1,6 +1,7 @@
+import copy, os
 from rest_framework import serializers
 from . import models
-import copy, os
+from projects.serializers import DinamycFieldsModelSerializer
 
 class CapexObjectFilesSerializer(serializers.ModelSerializer):
 	file_size = serializers.SerializerMethodField()
@@ -25,18 +26,16 @@ class CapexObjectSettingsSerializer(serializers.ModelSerializer):
 		model = models.CapexObjectSetting
 		fields = '__all__'
 
-class CapexSerializer(serializers.ModelSerializer):
+class CapexSerializer(DinamycFieldsModelSerializer):
 	object_settings = CapexObjectSettingsSerializer(read_only=True)
+	active = serializers.SerializerMethodField(read_only=True)
 	
 	class Meta:
 		model = models.Capex
-		fields = '__all__'
+		fields='__all__'
 
-	def __init__(self, *args, **kwargs):
-		fields = kwargs.pop('fields', None)
-		super().__init__(*args, **kwargs)
-		if fields is not None:
-			allowed = set(fields)
-			existing = set(self.fields)
-			for field_name in existing - allowed:
-				self.fields.pop(field_name)
+	def get_active(self, obj):
+		if obj.start_date and obj.end_date:
+			return True
+		else:
+			return False
