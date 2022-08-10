@@ -23,6 +23,7 @@ class FinancialIndicatorSerializer(serializers.ModelSerializer):
 		fields = '__all__'
 
 class MainParameterSerializer(serializers.ModelSerializer):
+	# duration=serializers.CharField(read_only=True)
 	class Meta:
 		model = models.MainParameter
 		exclude = ['id', 'calculation',]

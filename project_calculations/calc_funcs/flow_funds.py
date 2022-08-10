@@ -326,6 +326,7 @@ class FlowFunds:
 			cash_balance+self.сash_balance_beginning_period(month)
 		return cash_balance
 
+class FLDBLoadData(FlowFunds):
 	def add_data_in_db(self):
 		'''Добавить все данные в базу данных'''
 		for month, date in enumerate(self.daterange):
@@ -352,7 +353,6 @@ class FlowFunds:
 			model.save()
 		return f'model'
 
-CashFlowPlan
 
 
 

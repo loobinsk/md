@@ -116,50 +116,50 @@ class ResultFinancialAnalys(models.Model):
 	calculation = models.ForeignKey(Calculation, on_delete=models.CASCADE)
 	month = models.DateTimeField('Месяц, к которому относятся значения')
 
-	return_on_sales_rot = models.FloatField('Рентабельность продаж (ROS)')
-	return_on_equity_roe = models.FloatField('Рентабельность собственного капитала (ROE)')
-	return_on_assets_roa = models.FloatField('Рентабельность активов (ROA)')
-	asset_turnover_ratio = models.FloatField('Коэффициент оборачиваемости активов')
-	сurrent_assets_turnover_ratio = models.FloatField('Коэффициент оборачиваемости оборотных активов')
-	inventory_turnover_ratio = models.FloatField('Коэффициент оборачиваемости запасов')
-	accounts_receivable_turnover_ratio = models.FloatField('Коэффициент оборачиваемости дебиторской задолженности')
-	accounts_payable_turnover_ratio = models.FloatField('Коэффициент оборачиваемости кредиторской задолженности')
-	autonomy_coefficient = models.FloatField('Коэффициент автономии')
-	leverage_ratio_de = models.FloatField('Коэффициент левериджа (D/E)')
-	own_working_capital_ratio = models.FloatField('Коэффициент собственных оборотных средств')
-	absolute_liquidity_ratio = models.FloatField('Коэффициент абсолютной ликвидности')
-	interim_liquidity_ratio = models.FloatField('Коэффициент промежуточной ликвидности')
-	current_liquidity_ratio = models.FloatField('Коэффициент текущей ликвидности')
+	return_on_sales_rot = models.FloatField('Рентабельность продаж (ROS)', null=True, blank=True)
+	return_on_equity_roe = models.FloatField('Рентабельность собственного капитала (ROE)', null=True, blank=True)
+	return_on_assets_roa = models.FloatField('Рентабельность активов (ROA)', null=True, blank=True)
+	asset_turnover_ratio = models.FloatField('Коэффициент оборачиваемости активов', null=True, blank=True)
+	сurrent_assets_turnover_ratio = models.FloatField('Коэффициент оборачиваемости оборотных активов', null=True, blank=True)
+	inventory_turnover_ratio = models.FloatField('Коэффициент оборачиваемости запасов', null=True, blank=True)
+	accounts_receivable_turnover_ratio = models.FloatField('Коэффициент оборачиваемости дебиторской задолженности', null=True, blank=True)
+	accounts_payable_turnover_ratio = models.FloatField('Коэффициент оборачиваемости кредиторской задолженности', null=True, blank=True)
+	autonomy_coefficient = models.FloatField('Коэффициент автономии', null=True, blank=True)
+	leverage_ratio_de = models.FloatField('Коэффициент левериджа (D/E)', null=True, blank=True)
+	own_working_capital_ratio = models.FloatField('Коэффициент собственных оборотных средств', null=True, blank=True)
+	absolute_liquidity_ratio = models.FloatField('Коэффициент абсолютной ликвидности', null=True, blank=True)
+	interim_liquidity_ratio = models.FloatField('Коэффициент промежуточной ликвидности', null=True, blank=True)
+	current_liquidity_ratio = models.FloatField('Коэффициент текущей ликвидности', null=True, blank=True)
 
 	def __str__(self):
 		return self.calculation.project.name
 
 class Rating(models.Model):
 	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE,related_name='rating')
-	rating = models.PositiveIntegerField('Рейтинг проекта')
-	comment = models.TextField('Комментарий к рейтингу')
+	rating = models.PositiveIntegerField('Рейтинг проекта', null=True, blank=True)
+	comment = models.TextField('Комментарий к рейтингу', null=True, blank=True)
 
 	def __str__(self):
 		return self.calculation.project.name
 
 class MainParameter(models.Model):
 	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE,related_name='main_parameters')
-	start_date = models.DateField('Начало проекта')
-	end_date = models.DateField('Окончание проекта')
+	start_date = models.DateField('Начало проекта', null=True, blank=True)
+	end_date = models.DateField('Окончание проекта', null=True, blank=True)
 	
 	def duration():
-		return start_date-end_date
+		return f'{start_date-end_date}'
 
 	def __str__(self):
 		return self.calculation.project.name
 
 class FundingAmount(models.Model):
 	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE, related_name='funding_amounts')
-	capEx_amount = models.FloatField('Сумма CapEx (с НДС), руб')
-	amount_of_own_funds = models.FloatField('Сумма собственных средств, руб')
-	amount_of_borrowed_funds = models.FloatField('Сумма заемных средств, руб')
-	DE_ratio = models.FloatField('Коэффициент D/E')
-	average_Debt_EBITDA_ratio = models.FloatField('Средний коэффициент Debt/EBITDA')
+	capEx_amount = models.FloatField('Сумма CapEx (с НДС), руб', null=True, blank=True)
+	amount_of_own_funds = models.FloatField('Сумма собственных средств, руб', null=True, blank=True)
+	amount_of_borrowed_funds = models.FloatField('Сумма заемных средств, руб', null=True, blank=True)
+	DE_ratio = models.FloatField('Коэффициент D/E', null=True, blank=True)
+	average_Debt_EBITDA_ratio = models.FloatField('Средний коэффициент Debt/EBITDA', null=True, blank=True)
 
 	def total_amount(self):
 		return self.amount_of_own_funds+self.amount_of_borrowed_funds
@@ -170,12 +170,12 @@ class FundingAmount(models.Model):
 class AnnualAverage(models.Model):
 	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE,
 									related_name='annual_average')
-	average_annual_revenue = models.FloatField('Среднегодовая выручка (без НДС), Руб')
-	average_annual_operating_costs = models.FloatField('Среднегодовые операционные затраты с амортизайцией (без НДС), руб')
-	average_annual_net_profit = models.FloatField('Среднегодовая чистая прибыль, руб')
-	average_return_on_sales = models.FloatField('Средняя рентабельность продаж, %')
-	average_annual_VAT = models.FloatField('Среднегодовой НДС, руб')
-	average_annual_income_tax = models.FloatField('Среднегодовой налог на прибыль, руб')
+	average_annual_revenue = models.FloatField('Среднегодовая выручка (без НДС), Руб', null=True, blank=True)
+	average_annual_operating_costs = models.FloatField('Среднегодовые операционные затраты с амортизайцией (без НДС), руб', null=True, blank=True)
+	average_annual_net_profit = models.FloatField('Среднегодовая чистая прибыль, руб', null=True, blank=True)
+	average_return_on_sales = models.FloatField('Средняя рентабельность продаж, %', null=True, blank=True)
+	average_annual_VAT = models.FloatField('Среднегодовой НДС, руб', null=True, blank=True)
+	average_annual_income_tax = models.FloatField('Среднегодовой налог на прибыль, руб', null=True, blank=True)
 
 	def __str__(self):
 		return self.calculation.project.name
@@ -183,12 +183,12 @@ class AnnualAverage(models.Model):
 class BasicIndicator(models.Model):
 	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE,
 									related_name='basic_indicators')
-	discount_rate = models.FloatField('ставка дисконтирования, %')
-	refinancing_rate = models.FloatField('ставка рефинансирования, %')
-	net_present_value_npv = models.FloatField('чистая приведенная стоимость npv, руб')
-	profitability_index_pi = models.FloatField('индекс рентабельности pi')
-	internal_rate_return_irr = models.FloatField('внутренняя норма доходности irr, %')
-	MIRR_internal_rate_return = models.FloatField('Модифицированная внутренняя норма доходности MIRR, %')
+	discount_rate = models.FloatField('ставка дисконтирования, %', null=True, blank=True)
+	refinancing_rate = models.FloatField('ставка рефинансирования, %', null=True, blank=True)
+	net_present_value_npv = models.FloatField('чистая приведенная стоимость npv, руб', null=True, blank=True)
+	profitability_index_pi = models.FloatField('индекс рентабельности pi', null=True, blank=True)
+	internal_rate_return_irr = models.FloatField('внутренняя норма доходности irr, %', null=True, blank=True)
+	MIRR_internal_rate_return = models.FloatField('Модифицированная внутренняя норма доходности MIRR, %', null=True, blank=True)
 
 	def __str__(self):
 		return self.calculation.project.name
@@ -196,8 +196,8 @@ class BasicIndicator(models.Model):
 class PaybackProject(models.Model):
 	calculation = models.OneToOneField(Calculation, on_delete=models.CASCADE,
 									related_name='payback_project')
-	nominal_payback_period = models.DateField('Номинальный срок окупаемости')
-	discounted_payback_period = models.DateField('Дисконтированный срок окупаемости')
+	nominal_payback_period = models.TextField('Номинальный срок окупаемости', null=True, blank=True)
+	discounted_payback_period = models.TextField('Дисконтированный срок окупаемости', null=True, blank=True)
 
 	def __str__(self):
 		return self.calculation.project.name

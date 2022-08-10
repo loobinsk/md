@@ -12,6 +12,7 @@ class BalanceCalc:
 	def __init__(self, calculation):
 		self.calculation = calculation
 		self.project = calculation.project
+		self.credits = calculation.variant_credits.credits
 		self.FL = FlowFunds(calculation)
 		self.PL = ProfitAndLossPlanCalculation(calculation)
 		self.capex = calculation.variant_capex
@@ -24,10 +25,10 @@ class BalanceCalc:
 		values_list = []
 		for month, date in enumerate(self.FL.daterange):
 			if self.project.financing_type != 3:
-				value = self.capex.amount_capital_expenditure/(1+vat_rate(capex.VAT_rate)/100)
+				value = self.capex.amount_capital_expenditure/(1+vat_rate(self.capex.VAT_rate)/100)
 				credits = self.credits.filter(capitalization=True) #получаем кредиты с капитализацией процентов
 				value+=self.PL.project_interest_expenses(capex_date=date,queryset=credits)
-				value-=self.PL.depreciation(month)
+				value-=self.PL.depreciation(self.FL.sales_count(month))
 				if compare_dates(date, self.capex.end_date):
 					if self.capex.liquidation_cost_switch:
 						value+=self.capex.liquidation_cost/(1+vat_rate(self.capex.liquidation_cost_VAT_rate)/100)
@@ -87,7 +88,7 @@ class BalanceCalc:
 		for month, date in enumerate(self.FL.daterange):
 			value = start_value+self.FL.receipt_owners(month)
 			start_value = value
-			if month != self.FL.daterange[0]:
+			if date != self.FL.daterange[0]:
 				values_list.append(value)
 			else:
 				values_list.append(0)
@@ -101,10 +102,14 @@ class BalanceCalc:
 		for month, date in enumerate(self.PL.daterange):
 			value = start_value+self.PL.net_profit(month)
 			start_value = value
-			if month != self.FL.daterange[0]:
+			if date != self.FL.daterange[0]:
 				values_list.append(value)
 			else:
 				values_list.append(0)
+
+		values_list = values_list[:len(values_list)] + [0]*(len(self.FL.daterange)-len(values_list))
+		values_list.sort(key=lambda v: v != 0)
+		print(values_list)
 
 		return values_list
 
@@ -119,7 +124,7 @@ class BalanceCalc:
 		for month, date in enumerate(self.FL.daterange):
 			value = start_value+self.FL.credit_receipt(month)-self.FL.return_loans(month)
 			start_value = value
-			if month != self.FL.daterange[0]:
+			if date != self.FL.daterange[0]:
 				values_list.append(value)
 			else:
 				values_list.append(0)
@@ -138,6 +143,7 @@ class BalanceCalc:
 		'''получить итого баланс'''
 		return self.total_equity(month)+self.total_liabilities(month)
 
+class BalanceDBLoadData(BalanceCalc):
 	def add_data_in_db(self):
 		'''Добавить все данные в базу данных'''
 		for month, date in enumerate(self.FL.daterange):

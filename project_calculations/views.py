@@ -8,9 +8,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 #import from this app
 from .calc_funcs import profit_and_loss, flow_funds
-from .calc_funcs import balance, results
+from .calc_funcs import balance, results, total_fields
 from .models import Calculation, ResultFinancialAnalys, Balance
-from .models import ProfitAndLossPlan, CashFlowPlan
+from .models import ProfitAndLossPlan, CashFlowPlan, MainParameter
+from .models import Rating, FundingAmount, AnnualAverage
+from .models import BasicIndicator, PaybackProject
 from . import serializers, permissions
 
 from projects import choices
@@ -32,17 +34,23 @@ from project_financing_sources.serializers import LeasingContractVariantSerializ
 class TestView(APIView):
 
 	def get(self, request):
-		ResultFinancialAnalys.objects.all().delete()
-		Balance.objects.all().delete()
-		CashFlowPlan.objects.all().delete()
-		ProfitAndLossPlan.objects.all().delete()
 
-		calc = Calculation.objects.all().first()
-		PL = profit_and_loss.ProfitAndLossPlan(calc)
-		FL = flow_funds.FlowFunds(calc)
-		dataFL = FL.add_data_in_db()
-		dataPL = PL.add_data_in_db()
-
+		calc = get_object_or_404(Calculation, pk=4)
+		if not ProfitAndLossPlan.objects.filter(calculation=calc).exists():
+			PL_LOAD_DATA = profit_and_loss.DBLoadData(calc)
+			PL_LOAD_DATA.add_data_in_db()
+		if not CashFlowPlan.objects.filter(calculation=calc).exists():
+			FLDBLoadData = flow_funds.FLDBLoadData(calc)
+			FLDBLoadData.add_data_in_db()
+		if not Balance.objects.filter(calculation=calc).exists():
+			BalanceDBLoadData = balance.BalanceDBLoadData(calc)
+			BalanceDBLoadData.add_data_in_db()
+		if not ResultFinancialAnalys.objects.filter(calculation=calc).exists():
+			ResultsDBLoadData = results.ResultsDBLoadData(calc)
+			ResultsDBLoadData.add_data_in_db()
+		if not MainParameter.objects.filter(calculation=calc).exists():
+			DBLoadData = total_fields.DBLoadData(calc)
+			DBLoadData.load_data_in_db()
 		return Response('все окей')
 
 class CalculationEnums(APIView):
@@ -86,16 +94,50 @@ class CalculationView(generics.RetrieveUpdateAPIView):
 	queryset = Calculation.objects.all()
 	permission_classes = [permissions.IsOwner, IsAuthenticated]
 
-class CalcResultsView(generics.RetrieveAPIView):
-	serializer_class= serializers.CalculationResultSerializer
+class CalcResultsView(APIView):
+	serializer = serializers.CalculationResultSerializer
 	queryset = Calculation.objects.all()
 	permission_classes = [IsAuthenticated]
 
-	def get_object(self):
-		project = Project.objects.get(pk=self.kwargs['pk'], author=self.request.user)
-		queryset = self.filter_queryset(self.get_queryset())
-		obj = queryset.get(project=project)
-		return obj
+	def get(self, request, pk):
+		project = Project.objects.get(pk=pk, author=self.request.user)
+		obj = self.queryset.get(project=project)
+		serializer = self.serializer(obj)
+		return Response(serializer.data)
+
+	def post(self, request, pk, *args, **kwargs):
+		project = Project.objects.get(pk=pk)
+		calc = get_object_or_404(Calculation, project=project)
+
+		ResultFinancialAnalys.objects.filter(calculation=calc).delete()
+		Balance.objects.filter(calculation=calc).delete()
+		CashFlowPlan.objects.filter(calculation=calc).delete()
+		ProfitAndLossPlan.objects.filter(calculation=calc).delete()
+		MainParameter.objects.filter(calculation=calc).delete()
+		Rating.objects.filter(calculation=calc).delete()
+		FundingAmount.objects.filter(calculation=calc).delete()
+		AnnualAverage.objects.filter(calculation=calc).delete()
+		BasicIndicator.objects.filter(calculation=calc).delete()
+		PaybackProject.objects.filter(calculation=calc).delete()
+
+		if not ProfitAndLossPlan.objects.filter(calculation=calc).exists():
+			PL_LOAD_DATA = profit_and_loss.DBLoadData(calc)
+			PL_LOAD_DATA.add_data_in_db()
+		if not CashFlowPlan.objects.filter(calculation=calc).exists():
+			FLDBLoadData = flow_funds.FLDBLoadData(calc)
+			FLDBLoadData.add_data_in_db()
+		if not Balance.objects.filter(calculation=calc).exists():
+			BalanceDBLoadData = balance.BalanceDBLoadData(calc)
+			BalanceDBLoadData.add_data_in_db()
+		if not ResultFinancialAnalys.objects.filter(calculation=calc).exists():
+			ResultsDBLoadData = results.ResultsDBLoadData(calc)
+			ResultsDBLoadData.add_data_in_db()
+		if not MainParameter.objects.filter(calculation=calc).exists():
+			FieldsDBLoadData = total_fields.DBLoadData(calc)
+			FieldsDBLoadData.load_data_in_db()
+
+		serializer = self.serializer(calc)
+		return Response(serializer.data)
 
 class ProfitAndLossPlanView(generics.ListAPIView):
 	serializer_class= serializers.ProfitAndLossSerializer
@@ -130,24 +172,5 @@ class ResultFinancialAnalysView(generics.ListAPIView):
 	def get_queryset(self):
 		project = Project.objects.get(pk=self.kwargs['pk'], author=self.request.user)
 		return ResultFinancialAnalys.objects.filter(calculation__project=project)
-
-class CalculationView1(APIView):
-
-	def post(self, request):
-		ResultFinancialAnalys.objects.all().delete()
-		Balance.objects.all().delete()
-		CashFlowPlan.objects.all().delete()
-		ProfitAndLossPlan.objects.all().delete()
-
-		calc = Calculation.objects.all().first()
-		PL = profit_and_loss.ProfitAndLossPlan(calc)
-		FL = flow_funds.FlowFunds(calc)
-		BL = balance.BalanceCalc(calc)
-		RS = results.FinancialAnalysisResult(calc)
-		PL.add_data_in_db()
-		FL.add_data_in_db()
-		BL.add_data_in_db()
-		RS.add_data_in_db()
-		return Response('Все отлично')
 
 

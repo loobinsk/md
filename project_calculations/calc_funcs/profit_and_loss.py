@@ -33,6 +33,12 @@ class InitDate:
 		self.leasings_costs_list_minus = self.leasings_costs(minus=True)
 		self.income_tax_list = self.income_tax()
 		
+	def get_income_tax(self, month):
+		if month:
+			return self.income_tax_list[month]
+		else:
+			return 0
+
 	def indexation(self, period, indexation_value):
 		"""получить список с значениями индексации на каждый месяц в периоде продаж проекта.
 
@@ -55,23 +61,24 @@ class ProfitAndLossPlanCalculation(InitDate):
 
 	def depreciation(self, month:int)-> float:
 		'''получить аммортизацию проекта'''
-		capex = self.capex
-		deprication_period = capex.deprication_period #период аммортизации
-		if deprication_period != 0 and month <=deprication_period: #Если период амортизации не равен нулю и месяц меньше периода
-			if self.daterange[month] >= capex.end_date.date(): #если итерируемая дата меньше даты окончания стройки
-				amount_capital_expenditure = capex.amount_capital_expenditure/(1+vat_rate(capex.VAT_rate)/100) #сумма кап. расходов деленная на ндс
+		if month:
+			capex = self.capex
+			deprication_period = capex.deprication_period #период аммортизации
+			if deprication_period != 0 and month <=deprication_period: #Если период амортизации не равен нулю и месяц меньше периода
+				if self.daterange[month] >= capex.end_date.date(): #если итерируемая дата меньше даты окончания стройки
+					amount_capital_expenditure = capex.amount_capital_expenditure/(1+vat_rate(capex.VAT_rate)/100) #сумма кап. расходов деленная на ндс
 
-				if capex.liquidation_cost_switch: # Если ликвидационная стоимость подлежит амортизации
-					amount_capital_expenditure+=capex.liquidation_cost/(1+vat_rate(capex.liquidation_cost_VAT_rate)/100)
+					if capex.liquidation_cost_switch: # Если ликвидационная стоимость подлежит амортизации
+						amount_capital_expenditure+=capex.liquidation_cost/(1+vat_rate(capex.liquidation_cost_VAT_rate)/100)
 
-				if capex.liquidation_profit_switch:
-					amount_capital_expenditure-=capex.liquidation_profit
+					if capex.liquidation_profit_switch:
+						amount_capital_expenditure-=capex.liquidation_profit
 
-				credits = self.credits.filter(capitalization=True) #получаем кредиты с капитализацией процентов
-				for date in daterange(capex.start_date, capex.end_date):
-					amount_capital_expenditure+=self.project_interest_expenses(capex_date=date,queryset=credits) #прибавляем процентные расходы
+					credits = self.credits.filter(capitalization=True) #получаем кредиты с капитализацией процентов
+					for date in daterange(capex.start_date, capex.end_date):
+						amount_capital_expenditure+=self.project_interest_expenses(capex_date=date,queryset=credits) #прибавляем процентные расходы
 
-				return amount_capital_expenditure/deprication_period
+					return amount_capital_expenditure/deprication_period
 		return 0
 
 	def indexed_price(self, month:int)-> float:
@@ -83,10 +90,13 @@ class ProfitAndLossPlanCalculation(InitDate):
 
 	def indexed_value(self, month:int)-> float:
 		'''Получить иднексируемый объем'''
-		sales_init = self.sales
-		value_indexations = self.value_indexation[month] # индекс объема
-		volume = value_indexations*sales_init.sales_volume
-		return volume
+		if month:
+			sales_init = self.sales
+			value_indexations = self.value_indexation[month] # индекс объема
+			volume = value_indexations*sales_init.sales_volume
+			return volume
+		else:
+			return 0
 
 	def sales_revenue(self, month:int)-> float:
 		'''выручка по продажам'''
@@ -161,9 +171,10 @@ class ProfitAndLossPlanCalculation(InitDate):
 	def liquidation_costs(self, month:int)->float:
 		'''получить ликвидационные расходы'''
 		costs = 0
-		capex = self.capex
-		if self.daterange[month] == self.daterange[-1]:#если считаем последний месяц
-			costs += capex.liquidation_cost/(1+vat_rate(capex.liquidation_cost_VAT_rate)/100)
+		if month:
+			capex = self.capex
+			if self.daterange[month] == self.daterange[-1]:#если считаем последний месяц
+				costs += capex.liquidation_cost/(1+vat_rate(capex.liquidation_cost_VAT_rate)/100)
 
 		return costs
 
@@ -241,11 +252,12 @@ class ProfitAndLossPlanCalculation(InitDate):
 		opexs = self.opexs.all()
 		qs = opexs.exclude(cost_types_by_economic_grouping__in=[8, 9]) #исключаем комм. и упр. расходы
 		costs = self.amount_expenses(qs, month)
-		costs += self.ndpi(month) #добавляем ndpi
-		costs += self.excise(month) #добавляем акциз
-		costs += self.depreciation(month) #добавляем амортизацию
-		costs += self.liquidation_costs(month) #лик. расходы
-		costs += self.leasings_costs_list[month] #лизинговые расходы
+		if month:
+			costs += self.ndpi(month) #добавляем ndpi
+			costs += self.excise(month) #добавляем акциз
+			costs += self.depreciation(month) #добавляем амортизацию
+			costs += self.liquidation_costs(month) #лик. расходы
+			costs += self.leasings_costs_list[month] #лизинговые расходы
 
 		return costs
 
@@ -300,16 +312,17 @@ class ProfitAndLossPlanCalculation(InitDate):
 		Keyword arguments:
 		queryset -- qs с кредитами'''
 		total_interest_expenses = 0
+
 		if month:
+			date = self.daterange[month]
+
 			if capex_date:
 				date = capex_date
-			else:
-				date = self.daterange[month]
 
 			for credit in queryset:
 				credit = self.credit_interest_expenses(credit) #получаем словарь с проц. расходами
-				date = str(date.strftime("%Y-%m"))+'-'+list(credit)[0][-2:]
-				expense = credit.get(date,0)# получаем проц. расход за определенную дату
+				credit_date = str(date.strftime("%Y-%m"))+'-'+list(credit)[0][-2:]
+				expense = credit.get(credit_date,0)# получаем проц. расход за определенную дату
 				total_interest_expenses += expense
 
 		return total_interest_expenses
@@ -438,7 +451,7 @@ class ProfitAndLossPlanCalculation(InitDate):
 	#является полем
 	def net_profit(self, month:int)-> float:
 		'''чистая прибыль'''
-		income_tax = self.income_tax_list[month]
+		income_tax = self.get_income_tax(month)
 		profit = self.profit_before_tax(month)-income_tax
 		return profit
 
@@ -450,13 +463,6 @@ class ProfitAndLossPlanCalculation(InitDate):
 			ebitda = self.ebit(month)+self.depreciation(month)
 
 		return ebitda
-
-	def ebitda_list(self):
-		total_value = 0
-		for month in len(self.daterange):
-			total_value+=self.ebitda(month)
-
-		return total_value/len(self.daterange)
 	
 
 class DBLoadData(ProfitAndLossPlanCalculation):

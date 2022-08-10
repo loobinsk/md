@@ -8,6 +8,7 @@ admin.site.register(models.FundingAmount)
 admin.site.register(models.AnnualAverage)
 admin.site.register(models.BasicIndicator)
 admin.site.register(models.PaybackProject)
+admin.site.register(models.Rating)
 
 
 
