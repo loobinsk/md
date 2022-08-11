@@ -1,3 +1,5 @@
+import traceback
+
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 #drf
@@ -31,11 +33,23 @@ from project_financing_sources.serializers import OwnFundVariantSerializer, Cred
 from project_financing_sources.serializers import LeasingContractVariantSerializer, WorkingCapitalParameterSerializer
 
 
+
+
 class TestView(APIView):
 
 	def get(self, request):
+		calc = Calculation.objects.first()
+		ResultFinancialAnalys.objects.filter(calculation=calc).delete()
+		Balance.objects.filter(calculation=calc).delete()
+		CashFlowPlan.objects.filter(calculation=calc).delete()
+		ProfitAndLossPlan.objects.filter(calculation=calc).delete()
+		MainParameter.objects.filter(calculation=calc).delete()
+		Rating.objects.filter(calculation=calc).delete()
+		FundingAmount.objects.filter(calculation=calc).delete()
+		AnnualAverage.objects.filter(calculation=calc).delete()
+		BasicIndicator.objects.filter(calculation=calc).delete()
+		PaybackProject.objects.filter(calculation=calc).delete()
 
-		calc = get_object_or_404(Calculation, pk=4)
 		if not ProfitAndLossPlan.objects.filter(calculation=calc).exists():
 			PL_LOAD_DATA = profit_and_loss.DBLoadData(calc)
 			PL_LOAD_DATA.add_data_in_db()
@@ -120,57 +134,64 @@ class CalcResultsView(APIView):
 		BasicIndicator.objects.filter(calculation=calc).delete()
 		PaybackProject.objects.filter(calculation=calc).delete()
 
-		if not ProfitAndLossPlan.objects.filter(calculation=calc).exists():
-			PL_LOAD_DATA = profit_and_loss.DBLoadData(calc)
-			PL_LOAD_DATA.add_data_in_db()
-		if not CashFlowPlan.objects.filter(calculation=calc).exists():
-			FLDBLoadData = flow_funds.FLDBLoadData(calc)
-			FLDBLoadData.add_data_in_db()
-		if not Balance.objects.filter(calculation=calc).exists():
-			BalanceDBLoadData = balance.BalanceDBLoadData(calc)
-			BalanceDBLoadData.add_data_in_db()
-		if not ResultFinancialAnalys.objects.filter(calculation=calc).exists():
-			ResultsDBLoadData = results.ResultsDBLoadData(calc)
-			ResultsDBLoadData.add_data_in_db()
-		if not MainParameter.objects.filter(calculation=calc).exists():
-			FieldsDBLoadData = total_fields.DBLoadData(calc)
-			FieldsDBLoadData.load_data_in_db()
+		try:
+			if not ProfitAndLossPlan.objects.filter(calculation=calc).exists():
+				PL_LOAD_DATA = profit_and_loss.DBLoadData(calc)
+				PL_LOAD_DATA.add_data_in_db()
+			if not CashFlowPlan.objects.filter(calculation=calc).exists():
+				FLDBLoadData = flow_funds.FLDBLoadData(calc)
+				FLDBLoadData.add_data_in_db()
+			if not Balance.objects.filter(calculation=calc).exists():
+				BalanceDBLoadData = balance.BalanceDBLoadData(calc)
+				BalanceDBLoadData.add_data_in_db()
+			if not ResultFinancialAnalys.objects.filter(calculation=calc).exists():
+				ResultsDBLoadData = results.ResultsDBLoadData(calc)
+				ResultsDBLoadData.add_data_in_db()
+			if not MainParameter.objects.filter(calculation=calc).exists():
+				FieldsDBLoadData = total_fields.DBLoadData(calc)
+				FieldsDBLoadData.load_data_in_db()
 
-		serializer = self.serializer(calc)
-		return Response(serializer.data)
+			serializer = self.serializer(calc)
+			return Response(serializer.data)
+		except Exception as e:
+			return Response({'При расчетах произошла ошибка, код ошибки': traceback.format_exc()})
 
-class ProfitAndLossPlanView(generics.ListAPIView):
-	serializer_class= serializers.ProfitAndLossSerializer
-	queryset = ProfitAndLossPlan.objects.all()
-	permission_classes = [IsAuthenticated]
-	pagination_class = None
+def model_formater_for_table(qs):
+	'''форматирует данные из запроса для вывода в таблички'''
+	fields = qs.model._meta.fields
+	data = {field.name: [getattr(obj, field.name) for obj in qs] for field in fields if field.name not in ['calculation', 'id']}
+	return data
 
-	def get_queryset(self):
-		project = Project.objects.get(pk=self.kwargs['pk'], author=self.request.user)
-		return ProfitAndLossPlan.objects.filter(calculation__project=project)
+class ProfitAndLossPlanView(APIView):
+	permission_class = [IsAuthenticated]
+
+	def get(self, request, pk):
+		project = Project.objects.get(pk=pk, author=self.request.user)
+		data = model_formater_for_table(ProfitAndLossPlan.objects.filter(calculation__project=project))
+		return Response(data)
 
 class CashFlowPlanView(generics.ListAPIView):
-	serializer_class= serializers.CashFlowPlanSerializer
 	permission_class = [IsAuthenticated]
 
-	def get_queryset(self):
-		project = Project.objects.get(pk=self.kwargs['pk'], author=self.request.user)
-		return CashFlowPlan.objects.filter(calculation__project=project)
+	def get(self, request, pk):
+		project = Project.objects.get(pk=pk, author=self.request.user)
+		data = model_formater_for_table(CashFlowPlan.objects.filter(calculation__project=project))
+		return Response(data)
 
 class BalanceView(generics.ListAPIView):
-	serializer_class= serializers.BalanceSerializer
 	permission_class = [IsAuthenticated]
 
-	def get_queryset(self):
-		project = Project.objects.get(pk=self.kwargs['pk'], author=self.request.user)
-		return Balance.objects.filter(calculation__project=project)
+	def get(self, request, pk):
+		project = Project.objects.get(pk=pk, author=self.request.user)
+		data = model_formater_for_table(Balance.objects.filter(calculation__project=project))
+		return Response(data)
 
 class ResultFinancialAnalysView(generics.ListAPIView):
-	serializer_class= serializers.ResultFinancialAnalysSerializer
 	permission_class = [IsAuthenticated]
 
-	def get_queryset(self):
-		project = Project.objects.get(pk=self.kwargs['pk'], author=self.request.user)
-		return ResultFinancialAnalys.objects.filter(calculation__project=project)
+	def get(self, request, pk):
+		project = Project.objects.get(pk=pk, author=self.request.user)
+		data = model_formater_for_table(ResultFinancialAnalys.objects.filter(calculation__project=project))
+		return Response(data)
 
 

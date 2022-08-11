@@ -47,7 +47,7 @@ class FinancialAnalysisResult:
 			return 0
 
 
-	def сurrent_assets_turnover_ratio(self, month):
+	def current_assets_turnover_ratio(self, month):
 		'''Коэффициент оборачиваемости оборотных активов'''
 		try:
 			return self.PL.net_profit(self.sales_count(month))/self.BL.total_current_assets(month)
@@ -132,7 +132,7 @@ class ResultsDBLoadData(FinancialAnalysisResult):
 										return_on_equity_roe = round(self.return_on_equity_roe(month), 2),
 										return_on_assets_roa = round(self.return_on_assets_roa(month), 2),
 										asset_turnover_ratio = round(self.asset_turnover_ratio(month), 2),
-										сurrent_assets_turnover_ratio = round(self.сurrent_assets_turnover_ratio(month), 2),
+										current_assets_turnover_ratio = round(self.current_assets_turnover_ratio(month), 2),
 										inventory_turnover_ratio = round(self.inventory_turnover_ratio(month), 2),
 										accounts_receivable_turnover_ratio = round(self.accounts_payable_turnover_ratio(month), 2),
 										accounts_payable_turnover_ratio = round(self.accounts_payable_turnover_ratio(month), 2),

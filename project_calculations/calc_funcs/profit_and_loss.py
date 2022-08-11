@@ -476,7 +476,7 @@ class DBLoadData(ProfitAndLossPlanCalculation):
 			income_tax = self.income_tax_list[month]
 			pf_and_loss_plan = model(month=date,
 									revenue = round(self.revenue(month), 2),
-									сost_price = round(self.cost_price(month), 2),
+									cost_price = round(self.cost_price(month), 2),
 									gross_profit = round(self.gross_profit(month), 2),
 									business_expenses = round(self.amount_expenses(commercial_costs, month), 2),
 									management_expenses = round(self.amount_expenses(managerial_costs, month), 2),
