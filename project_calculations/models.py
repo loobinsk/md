@@ -50,7 +50,7 @@ class ProfitAndLossPlan(models.Model):
 	month = models.DateTimeField('Месяц, к которому относятся значения')
 
 	revenue = models.FloatField('Выручка')
-	сost_price = models.FloatField('Себестоимость')
+	cost_price = models.FloatField('Себестоимость')
 	gross_profit = models.FloatField('Валовая прибыль')
 	business_expenses = models.FloatField('Коммерческие расходы')
 	management_expenses = models.FloatField('Управленческие расходы')
@@ -120,7 +120,7 @@ class ResultFinancialAnalys(models.Model):
 	return_on_equity_roe = models.FloatField('Рентабельность собственного капитала (ROE)', null=True, blank=True)
 	return_on_assets_roa = models.FloatField('Рентабельность активов (ROA)', null=True, blank=True)
 	asset_turnover_ratio = models.FloatField('Коэффициент оборачиваемости активов', null=True, blank=True)
-	сurrent_assets_turnover_ratio = models.FloatField('Коэффициент оборачиваемости оборотных активов', null=True, blank=True)
+	current_assets_turnover_ratio = models.FloatField('Коэффициент оборачиваемости оборотных активов', null=True, blank=True)
 	inventory_turnover_ratio = models.FloatField('Коэффициент оборачиваемости запасов', null=True, blank=True)
 	accounts_receivable_turnover_ratio = models.FloatField('Коэффициент оборачиваемости дебиторской задолженности', null=True, blank=True)
 	accounts_payable_turnover_ratio = models.FloatField('Коэффициент оборачиваемости кредиторской задолженности', null=True, blank=True)
