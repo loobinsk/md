@@ -152,8 +152,29 @@ class CalcResultsView(APIView):
 
 		serializer = self.serializer(calc)
 		return Response(serializer.data)
-		# except Exception as e:
-		# 	return Response({'При расчетах произошла ошибка, код ошибки': traceback.format_exc()})
+
+def get_quarter(date, init=False):
+	month = date.month
+	if init:
+		if month >0 and month <4:
+			return [4-month, f'1 кв {date.year} г.']
+		elif month > 3 and month < 7:
+			return [7-month,f'2 кв {date.year} г.']
+		elif month > 6 and month < 10:
+			return [10-month, f'3 кв {date.year} г.']
+		else:
+			return [13-month, f'4 кв {date.year} г.']
+	else:
+		if month == 1:
+			return f'1 кв {date.year} г.'
+		elif month == 4:
+			return f'2 кв {date.year} г.'
+		elif month == 7:
+			return f'3 кв {date.year} г.'
+		elif month == 10:
+			return f'4 кв {date.year} г.'
+		else:
+			return None
 
 def model_formater_for_table(qs, period=None):
 	'''форматирует данные из запроса для вывода в таблички'''
@@ -161,13 +182,54 @@ def model_formater_for_table(qs, period=None):
 	data = {field.name: [getattr(obj, field.name) for obj in qs] for field in fields if field.name not in ['calculation', 'id']}
 	if period:
 		if period == 'quarters':
-			period = 4
-		elif period == 'years':
-			period = 12
+			start_month_count = 0
+			quarters = []
+			for month_index, date in enumerate(data.get('month')):
+				if month_index == 0:
+					start_month_count = get_quarter(date, True)[0]
+					if start_month_count != 0:
+						quarters.append(get_quarter(date, True)[1])
+				quarter = get_quarter(date)
+				if quarter != None:
+					quarters.append(quarter)
+			data['month']=quarters
 
-		for field, values in data.items():
-			if field not in ['month']:
-				data[field] = [sum(values[value:value + period]) for value in range(0, len(values), period)]
+			for index, (field, values) in enumerate(data.items()):
+
+				print(start_month_count)
+				if field != 'month':
+					new_list_values = []
+					for index, value in enumerate(range(start_month_count, len(values), 3)):
+						if start_month_count != 0 and index ==0:
+							new_list_values.append(sum(values[0:start_month_count]))
+						values_sum = sum(values[value:value+3+1])
+						new_list_values.append(round(values_sum,2))
+					data[field] = new_list_values
+
+		elif period == 'years':
+			start_month_count = 0
+			init_year = data.get('month')[0].year
+			years = [init_year]
+			for month_index, date in enumerate(data.get('month')):
+				if date.year != init_year:
+					years.append(date.year)
+					init_year = date.year
+					if month_index ==0:
+						start_month_count = month_index
+			data['month']=years
+
+			for index, (field, values) in enumerate(data.items()):
+
+				if field != 'month':
+					new_list_values= []
+					for index, value in enumerate(range(start_month_count, len(values), 12)):
+						if start_month_count != 0:
+							new_list_values.append(sum(values[0:start_month_count]))
+						values_sum = sum(values[value:value+12+1])
+						new_list_values.append(round(values_sum,2))
+					data[field] = new_list_values
+		elif period == 'months':
+			pass
 
 	return data
 
