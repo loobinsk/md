@@ -147,6 +147,14 @@ class ProfitAndLossPlanCalculation(InitDate):
 
 		return opex_price
 
+	def commercial_expenses(self, month):
+		commercial_costs = self.opexs.filter(cost_types_by_economic_grouping=8)
+		return self.amount_expenses(commercial_costs, month)
+
+	def business_expenses(self, month):
+		business_expenses = self.opexs.filter(cost_types_by_economic_grouping=9)
+		return self.amount_expenses(business_expenses, month)
+
 
 	def ndpi(self, month:int)-> float:
 		'''Получить ндпи'''
@@ -469,8 +477,6 @@ class DBLoadData(ProfitAndLossPlanCalculation):
 	def add_data_in_db(self):
 		'''Добавить все данные в таблицу ProfitAndLossPlan'''
 		opexs = self.opexs
-		commercial_costs = opexs.filter(cost_types_by_economic_grouping=8)
-		managerial_costs = opexs.filter(cost_types_by_economic_grouping=9)
 		time_1 = datetime.datetime.now()
 		for month, date in enumerate(self.daterange):
 			income_tax = self.income_tax_list[month]
@@ -478,8 +484,8 @@ class DBLoadData(ProfitAndLossPlanCalculation):
 									revenue = round(self.revenue(month), 2),
 									cost_price = round(self.cost_price(month), 2),
 									gross_profit = round(self.gross_profit(month), 2),
-									business_expenses = round(self.amount_expenses(commercial_costs, month), 2),
-									management_expenses = round(self.amount_expenses(managerial_costs, month), 2),
+									business_expenses = round(self.business_expenses(month), 2),
+									management_expenses = round(self.commercial_expenses(month), 2),
 									operating_income_ebit = round(self.ebit(month), 2),
 									interest_expenses = round(self.project_interest_expenses_all(month), 2),
 									profit_before_tax = round(self.profit_before_tax(month), 2),

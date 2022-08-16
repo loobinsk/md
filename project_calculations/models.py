@@ -1,7 +1,7 @@
 import datetime
 from django.db import models
 from django.contrib.auth.models import User
-
+from project_sales.services import get_duration
 from projects import choices
 from projects.models import Project
 from project_economic_indicators.models import Capex
@@ -147,8 +147,8 @@ class MainParameter(models.Model):
 	start_date = models.DateField('Начало проекта', null=True, blank=True)
 	end_date = models.DateField('Окончание проекта', null=True, blank=True)
 	
-	def duration():
-		return f'{start_date-end_date}'
+	def duration(self):
+		return get_duration(self.start_date, self.end_date)
 
 	def __str__(self):
 		return self.calculation.project.name

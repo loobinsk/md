@@ -134,48 +134,60 @@ class CalcResultsView(APIView):
 		BasicIndicator.objects.filter(calculation=calc).delete()
 		PaybackProject.objects.filter(calculation=calc).delete()
 
-		try:
-			if not ProfitAndLossPlan.objects.filter(calculation=calc).exists():
-				PL_LOAD_DATA = profit_and_loss.DBLoadData(calc)
-				PL_LOAD_DATA.add_data_in_db()
-			if not CashFlowPlan.objects.filter(calculation=calc).exists():
-				FLDBLoadData = flow_funds.FLDBLoadData(calc)
-				FLDBLoadData.add_data_in_db()
-			if not Balance.objects.filter(calculation=calc).exists():
-				BalanceDBLoadData = balance.BalanceDBLoadData(calc)
-				BalanceDBLoadData.add_data_in_db()
-			if not ResultFinancialAnalys.objects.filter(calculation=calc).exists():
-				ResultsDBLoadData = results.ResultsDBLoadData(calc)
-				ResultsDBLoadData.add_data_in_db()
-			if not MainParameter.objects.filter(calculation=calc).exists():
-				FieldsDBLoadData = total_fields.DBLoadData(calc)
-				FieldsDBLoadData.load_data_in_db()
+		if not ProfitAndLossPlan.objects.filter(calculation=calc).exists():
+			PL_LOAD_DATA = profit_and_loss.DBLoadData(calc)
+			PL_LOAD_DATA.add_data_in_db()
+		if not CashFlowPlan.objects.filter(calculation=calc).exists():
+			FLDBLoadData = flow_funds.FLDBLoadData(calc)
+			FLDBLoadData.add_data_in_db()
+		if not Balance.objects.filter(calculation=calc).exists():
+			BalanceDBLoadData = balance.BalanceDBLoadData(calc)
+			BalanceDBLoadData.add_data_in_db()
+		if not ResultFinancialAnalys.objects.filter(calculation=calc).exists():
+			ResultsDBLoadData = results.ResultsDBLoadData(calc)
+			ResultsDBLoadData.add_data_in_db()
+		if not MainParameter.objects.filter(calculation=calc).exists():
+			FieldsDBLoadData = total_fields.DBLoadData(calc)
+			FieldsDBLoadData.load_data_in_db()
 
-			serializer = self.serializer(calc)
-			return Response(serializer.data)
-		except Exception as e:
-			return Response({'При расчетах произошла ошибка, код ошибки': traceback.format_exc()})
+		serializer = self.serializer(calc)
+		return Response(serializer.data)
+		# except Exception as e:
+		# 	return Response({'При расчетах произошла ошибка, код ошибки': traceback.format_exc()})
 
-def model_formater_for_table(qs):
+def model_formater_for_table(qs, period=None):
 	'''форматирует данные из запроса для вывода в таблички'''
 	fields = qs.model._meta.fields
 	data = {field.name: [getattr(obj, field.name) for obj in qs] for field in fields if field.name not in ['calculation', 'id']}
+	if period:
+		if period == 'quarters':
+			period = 4
+		elif period == 'years':
+			period = 12
+
+		for field, values in data.items():
+			if field not in ['month']:
+				data[field] = [sum(values[value:value + period]) for value in range(0, len(values), period)]
+
 	return data
 
 class ProfitAndLossPlanView(APIView):
-	permission_class = [IsAuthenticated]
 
 	def get(self, request, pk):
-		project = Project.objects.get(pk=pk, author=self.request.user)
-		data = model_formater_for_table(ProfitAndLossPlan.objects.filter(calculation__project=project))
+		project = Project.objects.get(pk=pk)
+		period = request.query_params.get('period')
+		data = model_formater_for_table(ProfitAndLossPlan.objects.filter(calculation__project=project), period)
 		return Response(data)
 
 class CashFlowPlanView(generics.ListAPIView):
 	permission_class = [IsAuthenticated]
 
 	def get(self, request, pk):
+		queryset = CashFlowPlan.objects.filter(calculation__project=project)
 		project = Project.objects.get(pk=pk, author=self.request.user)
-		data = model_formater_for_table(CashFlowPlan.objects.filter(calculation__project=project))
+		period = request.query_params.get('period')
+		print(period, 'fregreghrgr')
+		data = model_formater_for_table(queryset, period)
 		return Response(data)
 
 class BalanceView(generics.ListAPIView):

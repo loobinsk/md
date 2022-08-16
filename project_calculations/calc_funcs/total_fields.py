@@ -11,6 +11,11 @@ from .flow_funds import FlowFunds
 from .balance import BalanceCalc
 
 
+def values_sum(daterange, func):
+	'''возвращает сумму значений для всех дат'''
+	list_ =[func(month) for month in range(len(daterange))]
+	return sum(list_)
+
 class InitData:
 	def __init__(self, calculation):
 		self.calculation = calculation
@@ -30,7 +35,7 @@ class MainParameterCalculation(InitData):
 class FundingAmountCalculation(InitData):
 
 	def capex_amount(self):
-		return self.PL.capex.amount_capital_expenditure
+		return round(self.PL.capex.amount_capital_expenditure, 2)
 
 	def amount_of_own_funds(self):
 		total_value = 0
@@ -38,7 +43,7 @@ class FundingAmountCalculation(InitData):
 			for own_fund in self.PL.own_funds.all():
 				total_value+=own_fund.source_sum
 
-		return total_value
+		return round(total_value, 2)
 
 	def amount_of_borrowed_funds(self):
 		total_value=0
@@ -46,49 +51,62 @@ class FundingAmountCalculation(InitData):
 			for credit in self.PL.credits.all():
 				total_value+=credit.sum_in_currancy
 
-		return total_value
+		return round(total_value, 2)
 
 	def DE_ratio(self):
 		try:
-			return self.amount_of_borrowed_funds()/self.amount_of_own_funds()
+			return round(self.amount_of_borrowed_funds()/self.amount_of_own_funds(), 2)
 		except ZeroDivisionError:
 			return None
 
 	def average_Debt_EBITDA_ratio(self):
 		try:
 			amount_of_borrowed_funds = sum(self.BL.borrowed_funds_list)/len(self.FL.daterange)
-			total_ebitda = self.PL.total_ebitda_in_all_month()
-			return amount_of_borrowed_funds/total_ebitda
-		except:
+
+			total_ebitda = values_sum(self.PL.daterange, self.PL.ebitda)
+			return round(amount_of_borrowed_funds/total_ebitda, 2)
+		except ZeroDivisionError:
 			return None
 
 class AnnualAverageCalculation(InitData):
 
 	def average_annual_revenue(self):
-		return 0
+		total_revenue=values_sum(self.PL.daterange, self.PL.revenue)
+		average_revenue = total_revenue/len(self.PL.daterange)
+		return round(average_revenue*12, 1)
 
 	def average_annual_operating_costs(self):
-		return 0
+		commercial_costs = values_sum(self.PL.daterange, self.PL.commercial_expenses)
+		business_expenses = values_sum(self.PL.daterange, self.PL.business_expenses)
+		costs = values_sum(self.PL.daterange, self.PL.cost_price)
+		average_costs = sum([commercial_costs, business_expenses, costs])/len(self.PL.daterange)
+		return round(average_costs*12, 1)
 
 	def average_annual_net_profit(self):
-		return 0
+		net_profit = values_sum(self.PL.daterange, self.PL.net_profit)/len(self.PL.daterange)
+		return round(net_profit*12, 2)
 
 	def average_return_on_sales(self):
-		return 0
+		try:
+			average_return_sales = self.average_annual_net_profit()/self.average_annual_revenue()
+			return round(average_return_sales*100, 2)
+		except ZeroDivisionError:
+			return None
 
 	def average_annual_VAT(self):
 		return 0
 
 	def average_annual_income_tax(self):
-		return 0
+		income_tax = values_sum(self.PL.daterange, self.PL.get_income_tax)/len(self.PL.daterange)
+		return round(income_tax*12, 2)
 
 class BasicIndicatorCalculation(InitData):
 
 	def discount_rate(self):
-		return 0
+		return round(self.PL.discount_rate.discount_rate_general_install, 2)
 
 	def refinancing_rate(self):
-		return 0
+		return round(self.PL.discount_rate.reinvesting_rate, 2)
 
 	def net_present_value_npv(self):
 		return 0
@@ -163,7 +181,7 @@ class DBLoadData(ProjectRating, MainParameterCalculation,
 														nominal_payback_period=self.nominal_payback_period(),
 														discounted_payback_period=self.discounted_payback_period(),
 														)
-		return 0
+		return True
 
 
 
